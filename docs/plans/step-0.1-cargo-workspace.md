@@ -358,3 +358,12 @@ The coder fills in the placeholders based on the `cargo search` outcomes.
 Next: Step 0.2 — Directory Structure. Create the full `bin/*` and `crates/*` tree with empty `Cargo.toml` files referencing this workspace's `[workspace.dependencies]`.
 
 Once Step 0.1 is committed and verified, this plan file moves to `docs/plans/archive/step-0.1-cargo-workspace.md` as part of the archive convention.
+
+---
+
+## Outcomes
+
+- **`revm` version:** `38.0.0` on crates.io. The git workspace tag is `v55` — a separate numbering scheme independent of the published crate version. AGENTS.md "around v38" reference updated.
+- **`reth-*` strategy: git dependency.** No real crates.io release exists for any `reth-*` crate (all `0.0.0` placeholders). All four reth entries (`reth-ethereum`, `reth-db`, `reth-evm`, `reth-execution-types`) use the same git rev `02d1776786abc61721ae8876898ad19a702e0070` (HEAD of main, 2026-05-06).
+- **`reth-ethereum-primitives` removed.** `cargo search` confirmed it is only a `0.0.0` crates.io placeholder — not a standalone published crate. Removed from `[workspace.dependencies]`. Primitives accessed via `reth-ethereum`'s re-exports. AGENTS.md Rule 10 approved-deps list updated to match.
+- **Other resolved versions:** `jsonrpsee = "0.26"`, `metrics = "0.24"`, `metrics-exporter-prometheus = "0.18"`, `dashmap = "6"` (7.0.0-rc2 is pre-release), `rstest = "0.26"`, Rust toolchain `"1.95.0"`.

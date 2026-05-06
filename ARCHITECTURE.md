@@ -46,10 +46,10 @@
 **Pre-Phase-0 Sanity Check (do this FIRST):**
 - [ ] **Reth-as-library POC.** Standalone ~500-line Rust binary that pulls `revm` + `reth-evm` + `reth-db`, instantiates a `BlockExecutor`, runs one transaction end-to-end, asserts the post-state matches expectations. This is throwaway code, NOT part of the project tree. Goal: confirm the integration model works and that maintainer Rust velocity is sufficient before scaffolding.
 
-### Step 0.1 — Cargo Workspace Initialization
-- [ ] Create root `Cargo.toml` with `[workspace]` table listing all member crates and binaries
-- [ ] Pin Rust version via `rust-toolchain.toml` (channel = "stable", current minimum 1.85)
-- [ ] Configure `[workspace.dependencies]` with shared dep versions (revm, reth-*, alloy-*, tokio, etc.)
+### Step 0.1 — Cargo Workspace Initialization ✅
+- [x] Create root `Cargo.toml` with `[workspace]` table listing all member crates and binaries
+- [x] Pin Rust version via `rust-toolchain.toml` (channel = "1.95.0", edition 2024 requires 1.85+)
+- [x] Configure `[workspace.dependencies]` with shared dep versions (revm, reth-*, alloy-*, tokio, etc.)
 
 ### Step 0.2 — Directory Structure
 - [ ] Create the full tree from AGENTS.md "Project Structure"

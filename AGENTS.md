@@ -345,7 +345,7 @@ These are non-negotiable. The reviewer will flag violations as 🔴 Must Fix.
 - Adding a new external Rust dependency requires justification in the commit message.
 - Approved root dependencies (anything else needs review):
   - `revm` — EVM interpreter
-  - `reth-*` family (specifically `reth-ethereum-primitives`, `reth-db`, `reth-evm`, `reth-execution-types` as needed) — execution-layer abstractions and storage. Note: `reth-primitives` was removed in Reth 2.0 (April 2026); use `reth-ethereum-primitives` instead.
+  - `reth-*` family (specifically `reth-ethereum`, `reth-db`, `reth-evm`, `reth-execution-types` as needed) — execution-layer abstractions and storage, consumed as git dependencies pinned to a specific rev. Note: `reth-primitives` was removed in Reth 2.0 (April 2026); primitives are now accessed via `reth-ethereum`'s re-exports (`reth_ethereum::primitives::*`). `reth-ethereum-primitives` is not a standalone published crate (only a `0.0.0` crates.io placeholder as of 2026-05-06).
   - `alloy` (`alloy-primitives`, `alloy-rpc-types`, `alloy-sol-types`) — Ethereum types and ABI
   - `tokio` — async runtime
   - `jsonrpsee` — JSON-RPC server
@@ -476,27 +476,38 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (about to begin Step 0.1)
+**Current Phase:** Phase 0 — Project Setup (Step 0.1 complete, Step 0.2 next)
 
 **What was just completed:**
-- Stack and milestone decisions locked in (Rust + revm + reth-as-library, V1.0/V1.1/V1.2 split).
-- **Pre-Phase-0 reth-as-library POC SHIPPED.** Maintainer wrote a working revm-based POC in a single day that successfully extracts read-set and write-set from EVM execution against a CacheDB. Code lives outside the project tree and is throwaway. Calibration confirmed: Rust velocity is solid, revm-as-library integration works, and the abstraction shape (`TracingDb` + execution result + journal) maps cleanly to Krax's `Worker` + `Journal` + `RWSet`. **POC is complete; full project scaffolding is now unblocked.**
-- Working agreement with Claude (planner/reviewer) confirmed: two-agent loop (planner + coder), one ARCHITECTURE.md step per cycle, review pass after each cycle, ~500-line file cap and 60–80-line function cap, doc comments (`///`) on every public item explaining "why," tests specified by planner before code is written, Claude updates docs via filesystem MCP at session end.
-- Doc updates this session: Step 0.6 rescoped (kraxd is NOT containerized; auxiliary services land in the phase that needs them). New "Library Verification Protocol" section added requiring Context7 verification on every external library use. Approved-deps list updated for Reth 2.0 (`reth-primitives` → `reth-ethereum-primitives`).
+- **Step 0.1 — Cargo Workspace Initialization done.** `Cargo.toml` (workspace root) and `rust-toolchain.toml` created. All FIXME values resolved via `cargo search`. Key version decisions:
+  - `revm = "38"` — crates.io published version is `38.0.0` (the git tag v55 is the monorepo tag, not the published crate version).
+  - `reth-*` — git dependencies pinned to rev `02d1776786abc61721ae8876898ad19a702e0070` (HEAD of main, 2026-05-06). No real crates.io release exists for reth-ethereum (only `0.0.0` placeholders).
+  - `reth-ethereum-primitives` removed from approved-deps — not a standalone published crate. Primitives accessed via `reth-ethereum`'s re-exports.
+  - `jsonrpsee = "0.26"`, `metrics = "0.24"`, `metrics-exporter-prometheus = "0.18"`.
+  - `dashmap = "6"` — latest stable (7.0.0-rc2 is pre-release, excluded from this range).
+  - `rstest = "0.26"`.
+  - Rust toolchain pinned to `1.95.0` (stable as of 2026-05-06; edition 2024 requires 1.85+).
+  - Edition 2024, resolver 3.
+  - Repository URL placeholder: `https://github.com/krax-labs/krax` — replace before V1.0 branding.
+- Verification: `rustup show active-toolchain` returns `1.95.0` (overridden by rust-toolchain.toml). `cargo metadata --no-deps` errors on missing member paths (expected at Step 0.1; workspace TOML parses cleanly).
+- AGENTS.md Rule 10 approved-deps updated: `reth-ethereum-primitives` removed as standalone; `reth-ethereum` added as the git dependency umbrella.
 
 **What to do next (in order):**
-1. 🔴 **Step 0.1 — Cargo Workspace Initialization.** Create root `Cargo.toml` with `[workspace]` listing all `bin/*` and `crates/*` (which don't exist yet — that's Step 0.2), `[workspace.package]` shared metadata, and `[workspace.dependencies]` with all approved deps pinned to current versions verified via Context7. Pin Rust toolchain via `rust-toolchain.toml`.
-2. Step 0.2 — Directory structure (creates the per-crate `Cargo.toml` files that Step 0.1's workspace references).
-3. Steps 0.3 through 0.9 in order, per ARCHITECTURE.md.
+1. 🔴 **Step 0.2 — Directory Structure.** Create the full `bin/*` and `crates/*` tree from AGENTS.md "Project Structure". Add `.gitkeep` in each empty directory. Each `bin/*` and `crates/*` gets its own `Cargo.toml` referencing workspace deps. After this step, `cargo build --workspace` should succeed (with empty lib/bin stubs).
+2. Step 0.3 — Minimal Entrypoint (`main.rs` for kraxd and kraxctl).
+3. Steps 0.4 through 0.9 in order, per ARCHITECTURE.md.
 
 **Blockers:**
+- Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
 - Project name not finalized. "Krax" is a working name. Search-replace before mainnet branding (this is a V1.1 concern, not now).
 
 **Notes:**
-- No source code in the project tree yet — the only files are AGENTS.md, ARCHITECTURE.md, REVIEWER.md.
+- `Cargo.toml` and `rust-toolchain.toml` exist at project root. No per-crate `Cargo.toml` files yet — that's Step 0.2.
+- No source code exists yet.
 - The reth-as-library POC code is at `~/Projects/evm-state-poc/` and is intentionally NOT brought into the Krax tree.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
+- `reth-*` git rev must be updated periodically as reth main advances. When upgrading, change ALL reth-* entries to the same new rev in one commit.
 
 ---
 
@@ -529,3 +540,17 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 3. **Library Verification Protocol added:** new AGENTS.md section requiring Context7 verification on every external library use. Planner declares verification checklist; coder cites Context7 in code comments; reviewer spot-checks citations. Verification priority tiered by library volatility (revm/reth/alloy = high; tokio/serde/thiserror = low).
 4. **`reth-primitives` → `reth-ethereum-primitives`:** approved-dependency list updated to reflect Reth 2.0 (April 2026) crate restructure.
 **Commit suggestion:** `docs(project): tighten working agreement, rescope docker-compose, add library verification protocol`
+
+### Session 2 — Step 0.1: Cargo Workspace Initialization
+**Date:** 2026-05-06
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Created `Cargo.toml` (workspace root) and `rust-toolchain.toml`. Resolved all FIXME values via `cargo search` before writing files. Key decisions:
+- `revm = "38"` — crates.io published version is 38.0.0 (the git workspace tag v55 is a separate numbering scheme).
+- `reth-*` — git deps pinned to rev `02d1776786abc61721ae8876898ad19a702e0070` (HEAD of main, 2026-05-06). No real crates.io release exists.
+- `reth-ethereum-primitives` removed from deps — only a `0.0.0` crates.io placeholder. Primitives accessed via `reth-ethereum`'s re-exports. AGENTS.md Rule 10 updated accordingly.
+- `jsonrpsee = "0.26"`, `metrics = "0.24"`, `metrics-exporter-prometheus = "0.18"`.
+- `dashmap = "6"` (7.0.0-rc2 is pre-release; stable 6.x pinned).
+- `rstest = "0.26"`, Rust toolchain `1.95.0`.
+- Edition 2024, resolver 3.
+- Verification gate passed: toolchain active at 1.95.0; `cargo metadata --no-deps` fails on missing member paths (correct behavior at Step 0.1).
+**Commit suggestion:** `chore(workspace): initialize Cargo workspace — Step 0.1`

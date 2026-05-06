@@ -1,0 +1,122 @@
+[workspace]
+resolver = "3"
+members = [
+    # Binaries
+    "bin/kraxd",
+    "bin/kraxctl",
+    "bin/kraxprover",
+    # Library crates
+    "crates/krax-types",
+    "crates/krax-config",
+    "crates/krax-mempool",
+    "crates/krax-rwset",
+    "crates/krax-sequencer",
+    "crates/krax-state",
+    "crates/krax-execution",
+    "crates/krax-batcher",
+    "crates/krax-prover",
+    "crates/krax-rpc",
+    "crates/krax-metrics",
+]
+
+[workspace.package]
+version    = "0.1.0"
+edition    = "2024"
+license    = "MIT"
+# Placeholder — replace with the actual GitHub URL before V1.0 branding.
+repository = "https://github.com/krax-labs/krax"
+authors    = ["Krax Contributors"]
+
+# ---------------------------------------------------------------------------
+# [workspace.dependencies]
+#
+# All external dependency versions live here. Per-crate Cargo.toml files
+# reference these via `dep-name = { workspace = true }` or
+# `dep-name.workspace = true`. Crates do NOT specify versions themselves.
+#
+# VERSION STATUS (resolved 2026-05-06):
+#   ✅ CONFIRMED  — verified via `cargo search` or Context7
+#   ⚠️ ESTIMATED  — stable crate, training-data version, low breakage risk
+# ---------------------------------------------------------------------------
+
+[workspace.dependencies]
+
+# --- EVM interpreter ---
+# ✅ cargo search revm (2026-05-06): crates.io version is 38.0.0.
+#    Note: the revm *git workspace tag* is v55; the published *crate* version is 38.0.0.
+#    These are independent numbering schemes — do not confuse them.
+revm = { version = "38", default-features = false, features = ["std", "serde"] }
+
+# --- Reth execution layer ---
+# ✅ cargo search reth-ethereum (2026-05-06): no real crates.io release (0.0.0 placeholders only).
+#    Strategy: git dependency pinned to HEAD of main at the time of workspace init.
+#    Rev: 02d1776786abc61721ae8876898ad19a702e0070 (from git ls-remote, 2026-05-06).
+#    All reth-* entries use the SAME rev to ensure a coherent snapshot.
+#
+#    reth-ethereum-primitives: cargo search returns 0.0.0 (placeholder only — not a
+#    standalone published crate). Per plan: removed from workspace.dependencies.
+#    Primitives are accessed via reth-ethereum's re-exports (e.g. reth_ethereum::primitives::*).
+#    AGENTS.md Rule 10 approved-deps list updated to match.
+reth-ethereum        = { git = "https://github.com/paradigmxyz/reth", rev = "02d1776786abc61721ae8876898ad19a702e0070", default-features = false }
+reth-db              = { git = "https://github.com/paradigmxyz/reth", rev = "02d1776786abc61721ae8876898ad19a702e0070", default-features = false }
+reth-evm             = { git = "https://github.com/paradigmxyz/reth", rev = "02d1776786abc61721ae8876898ad19a702e0070", default-features = false }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "02d1776786abc61721ae8876898ad19a702e0070", default-features = false }
+
+# --- Ethereum types ---
+# ✅ Context7 (/alloy-rs/alloy + /alloy-rs/core, 2026-05-06): version "1" confirmed.
+alloy-primitives = { version = "1", default-features = false, features = ["serde"] }
+alloy-rpc-types  = { version = "1", default-features = false }
+alloy-sol-types  = { version = "1", default-features = false }
+
+# --- JSON-RPC server ---
+# ✅ cargo search jsonrpsee (2026-05-06): 0.26.0
+jsonrpsee = { version = "0.26", features = ["server"] }
+
+# --- Metrics ---
+# ✅ cargo search metrics (2026-05-06): 0.24.5
+# ✅ cargo search metrics-exporter-prometheus (2026-05-06): 0.18.3
+metrics                     = "0.24"
+metrics-exporter-prometheus = "0.18"
+
+# --- CLI ---
+# ⚠️ ESTIMATED: clap 4.x is stable and long-lived; minor confirmed safe at 4.
+clap = { version = "4", features = ["derive"] }
+
+# --- Async runtime ---
+# ⚠️ ESTIMATED: tokio 1.x and tokio-util 0.7 are stable.
+tokio      = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["rt", "time"] }
+
+# --- Error handling ---
+# ⚠️ ESTIMATED: thiserror moved to 2.x in late 2024; anyhow 1.x is stable.
+thiserror = "2"
+anyhow    = "1"
+
+# --- Serialization ---
+# ⚠️ ESTIMATED: serde 1.x is stable.
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- Logging ---
+# ⚠️ ESTIMATED: tracing 0.1 and tracing-subscriber 0.3 are stable.
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+
+# --- Concurrency ---
+# ⚠️ ESTIMATED: parking_lot 0.12, rayon 1, crossbeam 0.8 are stable.
+parking_lot = "0.12"
+rayon       = "1"
+crossbeam   = "0.8"
+
+# --- Concurrent map ---
+# ✅ cargo search dashmap (2026-05-06): latest is 7.0.0-rc2 (pre-release).
+#    Pinning to "6" (latest stable series) — Cargo excludes pre-releases from this range.
+#    Upgrade to 7.x when it reaches stable release.
+dashmap = "6"
+
+# --- Test-only ---
+# ⚠️ ESTIMATED: proptest 1.x and pretty_assertions 1.x are stable.
+# ✅ cargo search rstest (2026-05-06): 0.26.1
+proptest          = "1"
+rstest            = "0.26"
+pretty_assertions = "1"
