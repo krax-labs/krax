@@ -476,34 +476,23 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (Step 0.1 complete, Step 0.2 next)
+**Current Phase:** Phase 0 — Project Setup (Steps 0.1 and 0.2 complete, Step 0.3 next)
 
 **What was just completed:**
-- **Step 0.1 — Cargo Workspace Initialization done.** `Cargo.toml` (workspace root) and `rust-toolchain.toml` created. All FIXME values resolved via `cargo search`. Key version decisions:
-  - `revm = "38"` — crates.io published version is `38.0.0` (the git tag v55 is the monorepo tag, not the published crate version).
-  - `reth-*` — git dependencies pinned to rev `02d1776786abc61721ae8876898ad19a702e0070` (HEAD of main, 2026-05-06). No real crates.io release exists for reth-ethereum (only `0.0.0` placeholders).
-  - `reth-ethereum-primitives` removed from approved-deps — not a standalone published crate. Primitives accessed via `reth-ethereum`'s re-exports.
-  - `jsonrpsee = "0.26"`, `metrics = "0.24"`, `metrics-exporter-prometheus = "0.18"`.
-  - `dashmap = "6"` — latest stable (7.0.0-rc2 is pre-release, excluded from this range).
-  - `rstest = "0.26"`.
-  - Rust toolchain pinned to `1.95.0` (stable as of 2026-05-06; edition 2024 requires 1.85+).
-  - Edition 2024, resolver 3.
-  - Repository URL placeholder: `https://github.com/krax-labs/krax` — replace before V1.0 branding.
-- Verification: `rustup show active-toolchain` returns `1.95.0` (overridden by rust-toolchain.toml). `cargo metadata --no-deps` errors on missing member paths (expected at Step 0.1; workspace TOML parses cleanly).
-- AGENTS.md Rule 10 approved-deps updated: `reth-ethereum-primitives` removed as standalone; `reth-ethereum` added as the git dependency umbrella.
+- **Step 0.2 — Directory Structure done.** Full `bin/*` and `crates/*` tree created per AGENTS.md "Project Structure". 14 workspace members total (3 binaries + 11 library crates), each with its own `Cargo.toml` using workspace inheritance for version/edition/license/repository/authors. Per-crate `[dependencies]` tables are intentionally empty — dependencies get added in the phase where each crate first uses them per AGENTS.md Rule 10. Sub-module directories (`static_/`, `profile/`, `conservative/`, `worker/`, `journal/`, `commit/`, `mpt/`, `lsm/`) created with `.gitkeep`; their `mod` declarations land in the phase that fills them. `docs/architecture/` and `docs/phase-notes/` created as `.gitkeep` placeholders. `cargo build --workspace` succeeds.
+- (Carry forward: Step 0.1 — Cargo workspace initialization done. revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
 
 **What to do next (in order):**
-1. 🔴 **Step 0.2 — Directory Structure.** Create the full `bin/*` and `crates/*` tree from AGENTS.md "Project Structure". Add `.gitkeep` in each empty directory. Each `bin/*` and `crates/*` gets its own `Cargo.toml` referencing workspace deps. After this step, `cargo build --workspace` should succeed (with empty lib/bin stubs).
-2. Step 0.3 — Minimal Entrypoint (`main.rs` for kraxd and kraxctl).
-3. Steps 0.4 through 0.9 in order, per ARCHITECTURE.md.
+1. 🔴 **Step 0.3 — Minimal Entrypoint.** Fill `bin/kraxd/src/main.rs` to print `krax vX.Y.Z` (read version from `CARGO_PKG_VERSION`) and exit cleanly. Fill `bin/kraxctl/src/main.rs` with a `clap` derive skeleton supporting `--help` only. `bin/kraxprover/src/main.rs` stays as `fn main() {}` until Phase 23.
+2. Step 0.4 — Makefile.
+3. Steps 0.5 through 0.9 in order, per ARCHITECTURE.md.
 
 **Blockers:**
 - Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
-- Project name not finalized. "Krax" is a working name. Search-replace before mainnet branding (this is a V1.1 concern, not now).
+- Project name not finalized. "Krax" is a working name. Search-replace before mainnet branding (V1.1 concern).
 
 **Notes:**
-- `Cargo.toml` and `rust-toolchain.toml` exist at project root. No per-crate `Cargo.toml` files yet — that's Step 0.2.
-- No source code exists yet.
+- 14 workspace members exist as compilable stubs. No business logic yet.
 - The reth-as-library POC code is at `~/Projects/evm-state-poc/` and is intentionally NOT brought into the Krax tree.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
@@ -554,3 +543,9 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 - Edition 2024, resolver 3.
 - Verification gate passed: toolchain active at 1.95.0; `cargo metadata --no-deps` fails on missing member paths (correct behavior at Step 0.1).
 **Commit suggestion:** `chore(workspace): initialize Cargo workspace — Step 0.1`
+
+### Session 3 — Step 0.2: Directory Structure
+**Date:** 2026-05-06
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Created the full `bin/*` and `crates/*` tree from AGENTS.md "Project Structure". 14 workspace members total. Every per-crate `Cargo.toml` uses workspace inheritance and has an empty `[dependencies]` table per the no-speculative-deps rule. Library crates have crate-level `//!` doc comments; binary crates have `fn main() {}` stubs. Sub-module directories created with `.gitkeep`; `mod` declarations deferred to the phase that fills each. `docs/architecture/` and `docs/phase-notes/` created as `.gitkeep` placeholders. `cargo build --workspace` succeeds. Out of scope: Makefile, gitignore, contracts/, scripts/, all root-level config (later Phase 0 steps).
+**Commit suggestion:** `chore(workspace): create directory structure — Step 0.2`

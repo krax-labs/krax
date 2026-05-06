@@ -1,0 +1,2 @@
+window.ALL_CRATES = ["krax_batcher","krax_config","krax_execution","krax_mempool","krax_metrics","krax_prover","krax_rpc","krax_rwset","krax_sequencer","krax_state","krax_types","kraxctl","kraxd","kraxprover"];
+//{"start":21,"fragment_lengths":[14,14,17,15,15,14,11,13,17,13,13,10,8,13]}

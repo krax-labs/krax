@@ -1,0 +1,11 @@
+[package]
+name             = "krax-mempool"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[dependencies]
+# Intentionally empty. Dependencies are added in the phase where this crate
+# first needs them, per AGENTS.md Rule 10.

@@ -51,10 +51,10 @@
 - [x] Pin Rust version via `rust-toolchain.toml` (channel = "1.95.0", edition 2024 requires 1.85+)
 - [x] Configure `[workspace.dependencies]` with shared dep versions (revm, reth-*, alloy-*, tokio, etc.)
 
-### Step 0.2 — Directory Structure
-- [ ] Create the full tree from AGENTS.md "Project Structure"
-- [ ] Add a `.gitkeep` file in each empty directory
-- [ ] Each `bin/*` and `crates/*` gets its own `Cargo.toml`
+### Step 0.2 — Directory Structure ✅
+- [x] Create the full tree from AGENTS.md "Project Structure"
+- [x] Add a `.gitkeep` file in each empty directory
+- [x] Each `bin/*` and `crates/*` gets its own `Cargo.toml`
 
 ### Step 0.3 — Minimal Entrypoint
 - [ ] Create `bin/kraxd/src/main.rs` that prints `krax vX.Y.Z` and exits cleanly
