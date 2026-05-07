@@ -1,0 +1,17 @@
+# docker-compose.yml — Auxiliary services for the Krax devnet.
+#
+# kraxd itself is NOT containerized. It runs natively via `make run` for
+# fast iteration and easier debugging.
+#
+# This file is a placeholder in Phase 0. Services land here in the phases
+# that introduce them:
+#   - Anvil (L1 simulator): Phase 11 or 12, when it needs co-management
+#     with another service. Until then, run Anvil natively in a terminal.
+#   - Blockscout (block explorer): Phase 11+
+#   - Prometheus + Grafana (metrics): Phase 16+
+#
+# Usage (once services exist):
+#   Start:  ./scripts/devnet-up.sh   (or: docker compose up -d)
+#   Stop:   ./scripts/devnet-down.sh (or: docker compose down)
+
+services: {}

@@ -73,10 +73,10 @@
 - [x] `.gitignore`: `target/`, `data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`
 - [x] `.env.example` with: `KRAX_DATA_DIR`, `KRAX_RPC_PORT`, `KRAX_L1_RPC_URL`, `KRAX_LOG_LEVEL`
 
-### Step 0.6 — Docker Compose (Auxiliary Services Placeholder)
-- [ ] Create a placeholder `docker-compose.yml` at the project root with no active services and a header comment explaining the file's purpose: auxiliary services (anvil, Blockscout, Prometheus, Grafana) land here in the phases that introduce them. **kraxd itself is NOT containerized** — it runs natively via `make run` for fast iteration and easier debugging.
-- [ ] Create `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as placeholder scripts (also no-op for now, with comments explaining they will start auxiliary services in later phases). They exist now so paths are stable; they do nothing until a service is added.
-- [ ] **Anvil for Phase 0:** developers run anvil natively via `anvil` in a terminal tab. No Docker required. Anvil moves into `docker-compose.yml` at the phase that first depends on it being co-managed with another service (likely Phase 11 or 12).
+### Step 0.6 — Docker Compose (Auxiliary Services Placeholder) ✅
+- [x] Create a placeholder `docker-compose.yml` at the project root with no active services and a header comment explaining the file's purpose: auxiliary services (anvil, Blockscout, Prometheus, Grafana) land here in the phases that introduce them. **kraxd itself is NOT containerized** — it runs natively via `make run` for fast iteration and easier debugging.
+- [x] Create `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as placeholder scripts (also no-op for now, with comments explaining they will start auxiliary services in later phases). They exist now so paths are stable; they do nothing until a service is added.
+- [x] **Anvil for Phase 0:** developers run anvil natively via `anvil` in a terminal tab. No Docker required. Anvil moves into `docker-compose.yml` at the phase that first depends on it being co-managed with another service (likely Phase 11 or 12).
 
 ### Step 0.7 — Foundry Init for Contracts
 - [ ] Run `forge init contracts/ --no-git`

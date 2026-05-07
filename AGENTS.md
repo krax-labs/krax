@@ -476,19 +476,20 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.5 complete, Step 0.6 next)
+**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.6 complete, Step 0.7 next)
 
 **What was just completed:**
-- **Step 0.5 — `.gitignore` & `.env.example` done.** `.gitignore` audited and augmented: three trailing-slash fixes (`target/`, `debug/`, `.claude/`), eight spec items added (`data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`), seven grouped section headers, existing Rust-tooling entries retained (`**/*.rs.bk`, `*.pdb`, `**/mutants.out*/`, `rustc-ice-*.txt`). `.env.example` created with four `KRAX_*` variables and defaults (`KRAX_DATA_DIR=./data`, `KRAX_RPC_PORT=9545`, `KRAX_L1_RPC_URL=http://localhost:8545`, `KRAX_LOG_LEVEL=info`) and per-variable comments. Documentation only — no env-loading code.
+- **Step 0.6 — Docker Compose placeholder done.** `docker-compose.yml` created at project root: no active services (`services: {}`), header comment documents purpose (auxiliary services only), Phase numbers for when each service lands (Anvil Phase 11/12, Blockscout Phase 11+, Prometheus + Grafana Phase 16+), and confirms kraxd is NOT containerized. `scripts/devnet-up.sh` and `scripts/devnet-down.sh` created as no-op placeholder scripts: `#!/usr/bin/env bash`, `set -euo pipefail`, echo placeholder message, `exit 0`. Both are executable (`chmod +x`). `scripts/` directory created implicitly by placing the files.
+- (Carry forward: Step 0.5 — `.gitignore` audited and augmented; `.env.example` created with four `KRAX_*` variables.)
 - (Carry forward: Step 0.4 — Makefile with seven targets; `make build/test/lint/run/fmt/clean` all pass.)
 - (Carry forward: Step 0.3 — `cargo run --bin kraxd` → `krax v0.1.0`; `cargo run --bin kraxctl -- --help` → help text.)
 - (Carry forward: Step 0.2 — full `bin/*` and `crates/*` tree, 14 workspace members, `cargo build --workspace` succeeds.)
 - (Carry forward: Step 0.1 — revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
 
 **What to do next (in order):**
-1. 🔴 **Step 0.6 — Docker Compose placeholder.** Placeholder `docker-compose.yml` (no active services, header comment explaining purpose). `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as no-op placeholder scripts.
-2. Step 0.7 — Foundry init for contracts.
-3. Steps 0.8 and 0.9 in order, per ARCHITECTURE.md.
+1. 🔴 **Step 0.7 — Foundry init for contracts.** `forge init contracts/ --no-git`, configure `foundry.toml` for solc 0.8.24, add `contracts/.gitignore`.
+2. Step 0.8 — Lint & format configuration (`rustfmt.toml`, `clippy.toml`).
+3. Step 0.9 — README.
 
 **Blockers:**
 - Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
@@ -500,6 +501,8 @@ A phase step is "done" when:
 - The `Commands` enum in `kraxctl` is empty until a step adds a real subcommand. Clippy does NOT warn on the `if cli.command.is_none()` branch in practice (verified at Step 0.4). The warning note from Step 0.3 is withdrawn; no `#[allow(...)]` needed.
 - The `integration` feature on every crate is intentionally empty. Integration tests land in Phase 1+.
 - `.env.example` documents the four kraxd env vars but nothing reads them yet. Config loading (`krax-config`) arrives in Phase 1+.
+- `docker-compose.yml` is a placeholder. No services are defined. Do not add Anvil to Compose until the phase that requires co-management (likely Phase 11 or 12).
+- `scripts/devnet-up.sh` and `scripts/devnet-down.sh` are placeholders. Do not add service orchestration calls until a service is added to `docker-compose.yml`.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
 - `reth-*` git rev must be updated periodically as reth main advances. When upgrading, change ALL reth-* entries to the same new rev in one commit.
@@ -573,3 +576,9 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 **Agent:** Claude Code (claude-sonnet-4-6)
 **Summary:** Audited and augmented `.gitignore` (option b — keep existing entries, fix trailing slashes, add spec items). Three trailing-slash fixes: `target/`, `debug/`, `.claude/` (the `.claude` entry was already in the file from early scaffolding; confirmed as a directory, trailing slash added per Decision 3 discipline). Eight missing spec items added in grouped sections. Existing Rust-tooling entries retained; individual per-entry comments dropped in favour of section headers. Created `.env.example` with four `KRAX_*` variables, defaults, and per-variable comments. Port 9545 chosen for `KRAX_RPC_PORT` to avoid Anvil port conflict by default. All 12 verification steps passed on first attempt. Documentation only — no env-loading code added.
 **Commit suggestion:** `chore(repo): audit .gitignore and add .env.example — Step 0.5`
+
+### Session 7 — Step 0.6: Docker Compose Placeholder
+**Date:** 2026-05-07
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Created `docker-compose.yml` at project root (no active services, `services: {}`, header comment with Phase numbers for when each service lands and explicit note that kraxd is NOT containerized). Created `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as no-op placeholder scripts (`#!/usr/bin/env bash`, `set -euo pipefail`, echo placeholder message, `exit 0`; both `chmod +x`). `scripts/` directory created implicitly by the files. `docker compose config` exits 0; `config --services` produces empty output. Both scripts exit 0. `make lint` clean. All 7 verification steps passed on first attempt.
+**Commit suggestion:** `chore(devenv): add docker-compose.yml and devnet scripts placeholders — Step 0.6`
