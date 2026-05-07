@@ -9,3 +9,7 @@ authors.workspace    = true
 [dependencies]
 # ✅ clap added Step 0.3: --help skeleton (clap 4.6.1 via workspace dep).
 clap = { workspace = true }
+
+[features]
+# Empty placeholder; integration tests gated behind this flag land in Phase 1+.
+integration = []

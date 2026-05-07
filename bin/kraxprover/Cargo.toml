@@ -10,3 +10,7 @@ authors.workspace    = true
 # Intentionally empty. Dependencies are added in the phase where this binary
 # first needs them, per AGENTS.md Rule 10. (kraxprover stays empty until
 # Phase 23.)
+
+[features]
+# Empty placeholder; integration tests gated behind this flag land in Phase 1+.
+integration = []

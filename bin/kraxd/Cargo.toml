@@ -12,3 +12,7 @@ authors.workspace    = true
 # uses only env!() — no external deps. CLI flags and tracing initialization
 # arrive in a later step alongside krax-config. kraxprover stays empty until
 # Phase 23.
+
+[features]
+# Empty placeholder; integration tests gated behind this flag land in Phase 1+.
+integration = []

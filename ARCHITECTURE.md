@@ -60,14 +60,14 @@
 - [x] Create `bin/kraxd/src/main.rs` that prints `krax vX.Y.Z` and exits cleanly
 - [x] Create `bin/kraxctl/src/main.rs` placeholder with `--help` only (use `clap` derive)
 
-### Step 0.4 — Makefile
-- [ ] `make build` — runs `cargo build --workspace --release`
-- [ ] `make test` — runs `cargo test --workspace`
-- [ ] `make test-integration` — runs `cargo test --workspace --features integration`
-- [ ] `make lint` — runs `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `make run` — runs `cargo run --bin kraxd`
-- [ ] `make fmt` — runs `cargo fmt --all`
-- [ ] `make clean` — runs `cargo clean` and removes `data/`
+### Step 0.4 — Makefile ✅
+- [x] `make build` — runs `cargo build --workspace --release`
+- [x] `make test` — runs `cargo test --workspace`
+- [x] `make test-integration` — runs `cargo test --workspace --features integration`
+- [x] `make lint` — runs `cargo clippy --workspace --all-targets -- -D warnings`
+- [x] `make run` — runs `cargo run --bin kraxd`
+- [x] `make fmt` — runs `cargo fmt --all`
+- [x] `make clean` — runs `cargo clean` and removes `data/`
 
 ### Step 0.5 — .gitignore & .env.example
 - [ ] `.gitignore`: `target/`, `data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`
