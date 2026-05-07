@@ -476,18 +476,19 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.4 complete, Step 0.5 next)
+**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.5 complete, Step 0.6 next)
 
 **What was just completed:**
-- **Step 0.4 — Makefile done.** `Makefile` created at project root with seven spec'd targets: `build` (release), `test`, `test-integration`, `lint`, `run` (debug), `fmt`, `clean`. Default target is `help` (hand-written `@echo` lines). `SHELL := bash`; `@` prefix on all recipes. All 14 workspace `Cargo.toml` files gained `[features] integration = []` (empty placeholder, comment notes Phase 1+ intent) so `make test-integration` resolves and exits 0 from day one. `make lint` passes clean with `-D warnings` (confirmed: no warnings on current codebase, including the expected `is_none()` branch in `kraxctl` — the warning does not fire in practice).
+- **Step 0.5 — `.gitignore` & `.env.example` done.** `.gitignore` audited and augmented: three trailing-slash fixes (`target/`, `debug/`, `.claude/`), eight spec items added (`data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`), seven grouped section headers, existing Rust-tooling entries retained (`**/*.rs.bk`, `*.pdb`, `**/mutants.out*/`, `rustc-ice-*.txt`). `.env.example` created with four `KRAX_*` variables and defaults (`KRAX_DATA_DIR=./data`, `KRAX_RPC_PORT=9545`, `KRAX_L1_RPC_URL=http://localhost:8545`, `KRAX_LOG_LEVEL=info`) and per-variable comments. Documentation only — no env-loading code.
+- (Carry forward: Step 0.4 — Makefile with seven targets; `make build/test/lint/run/fmt/clean` all pass.)
 - (Carry forward: Step 0.3 — `cargo run --bin kraxd` → `krax v0.1.0`; `cargo run --bin kraxctl -- --help` → help text.)
 - (Carry forward: Step 0.2 — full `bin/*` and `crates/*` tree, 14 workspace members, `cargo build --workspace` succeeds.)
 - (Carry forward: Step 0.1 — revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
 
 **What to do next (in order):**
-1. 🔴 **Step 0.5 — `.gitignore` & `.env.example`.**
-2. Step 0.6 — Docker Compose placeholder.
-3. Steps 0.7 through 0.9 in order, per ARCHITECTURE.md.
+1. 🔴 **Step 0.6 — Docker Compose placeholder.** Placeholder `docker-compose.yml` (no active services, header comment explaining purpose). `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as no-op placeholder scripts.
+2. Step 0.7 — Foundry init for contracts.
+3. Steps 0.8 and 0.9 in order, per ARCHITECTURE.md.
 
 **Blockers:**
 - Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
@@ -498,6 +499,7 @@ A phase step is "done" when:
 - `tracing-subscriber` initialization is deferred to a later step alongside `krax-config`.
 - The `Commands` enum in `kraxctl` is empty until a step adds a real subcommand. Clippy does NOT warn on the `if cli.command.is_none()` branch in practice (verified at Step 0.4). The warning note from Step 0.3 is withdrawn; no `#[allow(...)]` needed.
 - The `integration` feature on every crate is intentionally empty. Integration tests land in Phase 1+.
+- `.env.example` documents the four kraxd env vars but nothing reads them yet. Config loading (`krax-config`) arrives in Phase 1+.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
 - `reth-*` git rev must be updated periodically as reth main advances. When upgrading, change ALL reth-* entries to the same new rev in one commit.
@@ -506,7 +508,7 @@ A phase step is "done" when:
 
 ## Changelog
 
-> Append to this section at the end of every session. Do not remove old entries.
+> Append new entries at the BOTTOM of this section, AFTER the most recent entry. The newest entry must always be the LAST one in the file. Do not insert above existing entries; do not remove old entries.
 
 ### Session 0 — Project Planning
 **Date:** 2026-05-04
@@ -565,3 +567,9 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 **Agent:** Claude Code (claude-sonnet-4-6)
 **Summary:** Created `Makefile` at project root with seven spec'd targets (`build`, `test`, `test-integration`, `lint`, `run`, `fmt`, `clean`) plus a hand-written `help` default target. `make build` = `cargo build --workspace --release` (follows ARCHITECTURE.md spec verbatim). `make run` = debug. `SHELL := bash` set; `@` prefix on all recipes. All 14 workspace `Cargo.toml` files updated with `[features] integration = []` (empty placeholder, comment notes Phase 1+ intent) so `make test-integration` resolves and exits 0 from day one. Tab characters written correctly on first attempt (verified via Python byte inspection). `grep -rL "integration = []"` returned empty — all 14 files confirmed. `make lint` passes clean with `-D warnings`; `is_none()` warning does not fire. `make fmt` idempotent (`cargo fmt --all -- --check` exits 0 after `make fmt`). All 12 verification steps passed on first attempt.
 **Commit suggestion:** `chore(build): add Makefile with all Phase 0 targets — Step 0.4`
+
+### Session 6 — Step 0.5: .gitignore & .env.example
+**Date:** 2026-05-07
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Audited and augmented `.gitignore` (option b — keep existing entries, fix trailing slashes, add spec items). Three trailing-slash fixes: `target/`, `debug/`, `.claude/` (the `.claude` entry was already in the file from early scaffolding; confirmed as a directory, trailing slash added per Decision 3 discipline). Eight missing spec items added in grouped sections. Existing Rust-tooling entries retained; individual per-entry comments dropped in favour of section headers. Created `.env.example` with four `KRAX_*` variables, defaults, and per-variable comments. Port 9545 chosen for `KRAX_RPC_PORT` to avoid Anvil port conflict by default. All 12 verification steps passed on first attempt. Documentation only — no env-loading code added.
+**Commit suggestion:** `chore(repo): audit .gitignore and add .env.example — Step 0.5`

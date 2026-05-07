@@ -69,9 +69,9 @@
 - [x] `make fmt` — runs `cargo fmt --all`
 - [x] `make clean` — runs `cargo clean` and removes `data/`
 
-### Step 0.5 — .gitignore & .env.example
-- [ ] `.gitignore`: `target/`, `data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`
-- [ ] `.env.example` with: `KRAX_DATA_DIR`, `KRAX_RPC_PORT`, `KRAX_L1_RPC_URL`, `KRAX_LOG_LEVEL`
+### Step 0.5 — .gitignore & .env.example ✅
+- [x] `.gitignore`: `target/`, `data/`, `.env`, `.env.local`, `coverage/`, `.idea/`, `.vscode/`, `.DS_Store`, `*.log`
+- [x] `.env.example` with: `KRAX_DATA_DIR`, `KRAX_RPC_PORT`, `KRAX_L1_RPC_URL`, `KRAX_LOG_LEVEL`
 
 ### Step 0.6 — Docker Compose (Auxiliary Services Placeholder)
 - [ ] Create a placeholder `docker-compose.yml` at the project root with no active services and a header comment explaining the file's purpose: auxiliary services (anvil, Blockscout, Prometheus, Grafana) land here in the phases that introduce them. **kraxd itself is NOT containerized** — it runs natively via `make run` for fast iteration and easier debugging.
