@@ -56,9 +56,9 @@
 - [x] Add a `.gitkeep` file in each empty directory
 - [x] Each `bin/*` and `crates/*` gets its own `Cargo.toml`
 
-### Step 0.3 — Minimal Entrypoint
-- [ ] Create `bin/kraxd/src/main.rs` that prints `krax vX.Y.Z` and exits cleanly
-- [ ] Create `bin/kraxctl/src/main.rs` placeholder with `--help` only (use `clap` derive)
+### Step 0.3 — Minimal Entrypoint ✅
+- [x] Create `bin/kraxd/src/main.rs` that prints `krax vX.Y.Z` and exits cleanly
+- [x] Create `bin/kraxctl/src/main.rs` placeholder with `--help` only (use `clap` derive)
 
 ### Step 0.4 — Makefile
 - [ ] `make build` — runs `cargo build --workspace --release`

@@ -476,24 +476,26 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (Steps 0.1 and 0.2 complete, Step 0.3 next)
+**Current Phase:** Phase 0 — Project Setup (Steps 0.1, 0.2, and 0.3 complete, Step 0.4 next)
 
 **What was just completed:**
-- **Step 0.2 — Directory Structure done.** Full `bin/*` and `crates/*` tree created per AGENTS.md "Project Structure". 14 workspace members total (3 binaries + 11 library crates), each with its own `Cargo.toml` using workspace inheritance for version/edition/license/repository/authors. Per-crate `[dependencies]` tables are intentionally empty — dependencies get added in the phase where each crate first uses them per AGENTS.md Rule 10. Sub-module directories (`static_/`, `profile/`, `conservative/`, `worker/`, `journal/`, `commit/`, `mpt/`, `lsm/`) created with `.gitkeep`; their `mod` declarations land in the phase that fills them. `docs/architecture/` and `docs/phase-notes/` created as `.gitkeep` placeholders. `cargo build --workspace` succeeds.
-- (Carry forward: Step 0.1 — Cargo workspace initialization done. revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
+- **Step 0.3 — Minimal Entrypoint done.** `bin/kraxd/src/main.rs` prints `krax v0.1.0` via `env!("CARGO_PKG_VERSION")` and exits cleanly. `bin/kraxctl/src/main.rs` is a `clap` derive skeleton with `--help` and auto-generated `--version`; an empty `Commands` enum establishes the structural pattern for future subcommands without requiring a restructure of `main.rs` when they land. `clap = "4"` (4.6.1 confirmed via `cargo search`) added to `bin/kraxctl` via workspace dep. `bin/kraxd` has no new dependencies — the version banner is `println!` only; this is a documented Rule 4 exception (startup UX contract, not a log event). `bin/kraxprover` unchanged.
+- (Carry forward: Step 0.2 — full `bin/*` and `crates/*` tree, 14 workspace members, `cargo build --workspace` succeeds.)
+- (Carry forward: Step 0.1 — revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
 
 **What to do next (in order):**
-1. 🔴 **Step 0.3 — Minimal Entrypoint.** Fill `bin/kraxd/src/main.rs` to print `krax vX.Y.Z` (read version from `CARGO_PKG_VERSION`) and exit cleanly. Fill `bin/kraxctl/src/main.rs` with a `clap` derive skeleton supporting `--help` only. `bin/kraxprover/src/main.rs` stays as `fn main() {}` until Phase 23.
-2. Step 0.4 — Makefile.
-3. Steps 0.5 through 0.9 in order, per ARCHITECTURE.md.
+1. 🔴 **Step 0.4 — Makefile.** `make build`, `make test`, `make test-integration`, `make lint`, `make run`, `make fmt`, `make clean`. The Phase 0 Gate requires `make run` to work; `cargo run --bin kraxd` now produces the correct output, so the Makefile is the only thing between current state and that gate item.
+2. Step 0.5 — `.gitignore` & `.env.example`.
+3. Steps 0.6 through 0.9 in order, per ARCHITECTURE.md.
 
 **Blockers:**
 - Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
 - Project name not finalized. "Krax" is a working name. Search-replace before mainnet branding (V1.1 concern).
 
 **Notes:**
-- 14 workspace members exist as compilable stubs. No business logic yet.
-- The reth-as-library POC code is at `~/Projects/evm-state-poc/` and is intentionally NOT brought into the Krax tree.
+- `kraxd` version banner uses `println!` — documented Rule 4 exception with inline comment in `main.rs`. This is a narrow exception; all future runtime output uses `tracing`.
+- `tracing-subscriber` initialization is deferred to a later step alongside `krax-config`.
+- The `Commands` enum in `kraxctl` is empty until a step adds a real subcommand. Clippy may warn that the `if cli.command.is_none()` branch is always taken — expected and acceptable until Step 0.8 clippy configuration.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
 - `reth-*` git rev must be updated periodically as reth main advances. When upgrading, change ALL reth-* entries to the same new rev in one commit.
@@ -549,3 +551,9 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 **Agent:** Claude Code (claude-sonnet-4-6)
 **Summary:** Created the full `bin/*` and `crates/*` tree from AGENTS.md "Project Structure". 14 workspace members total. Every per-crate `Cargo.toml` uses workspace inheritance and has an empty `[dependencies]` table per the no-speculative-deps rule. Library crates have crate-level `//!` doc comments; binary crates have `fn main() {}` stubs. Sub-module directories created with `.gitkeep`; `mod` declarations deferred to the phase that fills each. `docs/architecture/` and `docs/phase-notes/` created as `.gitkeep` placeholders. `cargo build --workspace` succeeds. Out of scope: Makefile, gitignore, contracts/, scripts/, all root-level config (later Phase 0 steps).
 **Commit suggestion:** `chore(workspace): create directory structure — Step 0.2`
+
+### Session 4 — Step 0.3: Minimal Entrypoint
+**Date:** 2026-05-07
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Filled `bin/kraxd/src/main.rs` (prints `krax v0.1.0` via `env!("CARGO_PKG_VERSION")`, exits cleanly, `println!` with documented Rule 4 exception) and `bin/kraxctl/src/main.rs` (clap derive skeleton: `--help`, `--version`, empty `Commands` enum for future subcommands, no-args → print help + exit 0). `clap = { workspace = true }` added to `bin/kraxctl/Cargo.toml`; verified as 4.6.1 via `cargo search`. Context7 query confirmed `CommandFactory::command()` and `Command::print_help()` API surface (docs.rs/clap/latest/clap/builder/struct.Command.html). Workspace `Cargo.toml` clap comment updated from ESTIMATED to verified. `bin/kraxd/Cargo.toml` speculative comment corrected. `bin/kraxprover` untouched. `cargo run --bin kraxd` → `krax v0.1.0`, exit 0. `cargo run --bin kraxctl -- --help` → help text, exit 0. `cargo run --bin kraxctl -- --version` → `kraxctl 0.1.0`, exit 0.
+**Commit suggestion:** `feat(bin): minimal entrypoints for kraxd and kraxctl — Step 0.3`

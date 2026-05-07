@@ -7,5 +7,5 @@ repository.workspace = true
 authors.workspace    = true
 
 [dependencies]
-# Intentionally empty. Dependencies are added in the phase where this binary
-# first needs them, per AGENTS.md Rule 10. (kraxctl gets clap in Step 0.3.)
+# ✅ clap added Step 0.3: --help skeleton (clap 4.6.1 via workspace dep).
+clap = { workspace = true }

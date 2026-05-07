@@ -79,7 +79,7 @@ metrics                     = "0.24"
 metrics-exporter-prometheus = "0.18"
 
 # --- CLI ---
-# ⚠️ ESTIMATED: clap 4.x is stable and long-lived; minor confirmed safe at 4.
+# ✅ cargo search clap (2026-05-07): 4.6.1. Version "4" range includes 4.6.1.
 clap = { version = "4", features = ["derive"] }
 
 # --- Async runtime ---
