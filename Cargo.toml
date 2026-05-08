@@ -22,7 +22,7 @@ members = [
 [workspace.package]
 version    = "0.1.0"
 edition    = "2024"
-license    = "MIT"
+license    = "Apache-2.0"
 # Placeholder — replace with the actual GitHub URL before V1.0 branding.
 repository = "https://github.com/krax-labs/krax"
 authors    = ["Krax Contributors"]
