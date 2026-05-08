@@ -476,20 +476,19 @@ A phase step is "done" when:
 > Rewritten by the agent at the end of every session.
 > Keep it tight — the next agent reads this and knows exactly what to do.
 
-**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.6 complete, Step 0.7 next)
+**Current Phase:** Phase 0 — Project Setup (Steps 0.1–0.7 complete, Step 0.8 next)
 
 **What was just completed:**
-- **Step 0.6 — Docker Compose placeholder done.** `docker-compose.yml` created at project root: no active services (`services: {}`), header comment documents purpose (auxiliary services only), Phase numbers for when each service lands (Anvil Phase 11/12, Blockscout Phase 11+, Prometheus + Grafana Phase 16+), and confirms kraxd is NOT containerized. `scripts/devnet-up.sh` and `scripts/devnet-down.sh` created as no-op placeholder scripts: `#!/usr/bin/env bash`, `set -euo pipefail`, echo placeholder message, `exit 0`. Both are executable (`chmod +x`). `scripts/` directory created implicitly by placing the files.
+- **Step 0.7 — Foundry init for contracts done.** `contracts/` initialized via `forge init contracts/ --no-git`. Boilerplate deleted: `Counter.sol`, `Counter.t.sol`, `Counter.s.sol`, `contracts/README.md`. `.gitkeep` added to `contracts/src/`, `contracts/test/`, `contracts/script/`. `forge-std` installed as git submodule at tag `v1.16.1` (commit `620536fa5277db4e3fd46772d5cbc1ea0696fb43`); plain-cloned copy deleted first to avoid submodule-add conflict. `.gitmodules` created automatically. `contracts/foundry.toml` updated: `solc_version = "0.8.24"`, `evm_version = "cancun"` added to `[profile.default]`. `contracts/.gitignore` created with `out/`, `cache/`, `broadcast/`. `cd contracts && forge build` exits 0.
+- (Carry forward: Step 0.6 — `docker-compose.yml` placeholder; `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as no-ops.)
 - (Carry forward: Step 0.5 — `.gitignore` audited and augmented; `.env.example` created with four `KRAX_*` variables.)
 - (Carry forward: Step 0.4 — Makefile with seven targets; `make build/test/lint/run/fmt/clean` all pass.)
 - (Carry forward: Step 0.3 — `cargo run --bin kraxd` → `krax v0.1.0`; `cargo run --bin kraxctl -- --help` → help text.)
-- (Carry forward: Step 0.2 — full `bin/*` and `crates/*` tree, 14 workspace members, `cargo build --workspace` succeeds.)
-- (Carry forward: Step 0.1 — revm 38, reth-* git rev `02d1776786abc61721ae8876898ad19a702e0070`, jsonrpsee 0.26, etc. See archived plan for full version table.)
+- (Carry forward: Steps 0.1–0.2 — workspace, toolchain, full `bin/*` and `crates/*` tree.)
 
 **What to do next (in order):**
-1. 🔴 **Step 0.7 — Foundry init for contracts.** `forge init contracts/ --no-git`, configure `foundry.toml` for solc 0.8.24, add `contracts/.gitignore`.
-2. Step 0.8 — Lint & format configuration (`rustfmt.toml`, `clippy.toml`).
-3. Step 0.9 — README.
+1. 🔴 **Step 0.8 — Lint & format configuration.** `rustfmt.toml`, `clippy.toml`, verify `cargo clippy` passes.
+2. Step 0.9 — README.
 
 **Blockers:**
 - Repository URL is a placeholder (`https://github.com/krax-labs/krax`). Replace before V1.0 branding. Not a blocker for Phase 0 work.
@@ -498,11 +497,12 @@ A phase step is "done" when:
 **Notes:**
 - `kraxd` version banner uses `println!` — documented Rule 4 exception with inline comment in `main.rs`. All future runtime output uses `tracing`.
 - `tracing-subscriber` initialization is deferred to a later step alongside `krax-config`.
-- The `Commands` enum in `kraxctl` is empty until a step adds a real subcommand. Clippy does NOT warn on the `if cli.command.is_none()` branch in practice (verified at Step 0.4). The warning note from Step 0.3 is withdrawn; no `#[allow(...)]` needed.
+- The `Commands` enum in `kraxctl` is empty until a step adds a real subcommand.
 - The `integration` feature on every crate is intentionally empty. Integration tests land in Phase 1+.
 - `.env.example` documents the four kraxd env vars but nothing reads them yet. Config loading (`krax-config`) arrives in Phase 1+.
-- `docker-compose.yml` is a placeholder. No services are defined. Do not add Anvil to Compose until the phase that requires co-management (likely Phase 11 or 12).
-- `scripts/devnet-up.sh` and `scripts/devnet-down.sh` are placeholders. Do not add service orchestration calls until a service is added to `docker-compose.yml`.
+- `docker-compose.yml` is a placeholder. Do not add Anvil to Compose until Phase 11 or 12.
+- `contracts/` is a Foundry project with no real Solidity yet. Real contracts land in Phase 12. Do not add stub contract files before then.
+- `forge-std` is a git submodule at `v1.16.1`. New contributors must run `git submodule update --init` after cloning.
 - Do NOT start any sequencer or RW-set work in Phase 0. That's Phase 1+.
 - Every external library use MUST be Context7-verified per the Library Verification Protocol section. No exceptions.
 - `reth-*` git rev must be updated periodically as reth main advances. When upgrading, change ALL reth-* entries to the same new rev in one commit.
@@ -582,3 +582,9 @@ A reth-as-library POC is now the first concrete task before Phase 0 scaffolding,
 **Agent:** Claude Code (claude-sonnet-4-6)
 **Summary:** Created `docker-compose.yml` at project root (no active services, `services: {}`, header comment with Phase numbers for when each service lands and explicit note that kraxd is NOT containerized). Created `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as no-op placeholder scripts (`#!/usr/bin/env bash`, `set -euo pipefail`, echo placeholder message, `exit 0`; both `chmod +x`). `scripts/` directory created implicitly by the files. `docker compose config` exits 0; `config --services` produces empty output. Both scripts exit 0. `make lint` clean. All 7 verification steps passed on first attempt.
 **Commit suggestion:** `chore(devenv): add docker-compose.yml and devnet scripts placeholders — Step 0.6`
+
+### Session 8 — Step 0.7: Foundry Init for Contracts
+**Date:** 2026-05-07
+**Agent:** Claude Code (claude-sonnet-4-6)
+**Summary:** Initialized `contracts/` via `forge init contracts/ --no-git`. Deleted all boilerplate: `Counter.sol`, `Counter.t.sol`, `Counter.s.sol`, `contracts/README.md`. Added `.gitkeep` to `contracts/src/`, `contracts/test/`, `contracts/script/`. Deleted the plain-cloned `contracts/lib/forge-std/` from forge init and replaced with git submodule at tag `v1.16.1` (commit `620536fa5277db4e3fd46772d5cbc1ea0696fb43`); `.gitmodules` created automatically. `git submodule add --branch v1.16.1` failed (v1.16.1 is a tag, not a branch); recovered by adding without `--branch`, cleaning `.git/modules/contracts`, then checking out `v1.16.1` inside the submodule. Edited `contracts/foundry.toml` to add `solc_version = "0.8.24"` and `evm_version = "cancun"`. Created `contracts/.gitignore` with `out/`, `cache/`, `broadcast/`. `cd contracts && forge build` exits 0 ("Nothing to compile" — solc 0.8.24 was already cached). `make lint` clean. All 11 verification steps passed.
+**Commit suggestion:** `chore(contracts): foundry init for contracts — Step 0.7`

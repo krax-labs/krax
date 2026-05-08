@@ -78,10 +78,10 @@
 - [x] Create `scripts/devnet-up.sh` and `scripts/devnet-down.sh` as placeholder scripts (also no-op for now, with comments explaining they will start auxiliary services in later phases). They exist now so paths are stable; they do nothing until a service is added.
 - [x] **Anvil for Phase 0:** developers run anvil natively via `anvil` in a terminal tab. No Docker required. Anvil moves into `docker-compose.yml` at the phase that first depends on it being co-managed with another service (likely Phase 11 or 12).
 
-### Step 0.7 — Foundry Init for Contracts
-- [ ] Run `forge init contracts/ --no-git`
-- [ ] Configure `contracts/foundry.toml` for solc 0.8.24
-- [ ] Add `contracts/.gitignore` for `out/`, `cache/`, `broadcast/`
+### Step 0.7 — Foundry Init for Contracts ✅
+- [x] Run `forge init contracts/ --no-git`
+- [x] Configure `contracts/foundry.toml` for solc 0.8.24
+- [x] Add `contracts/.gitignore` for `out/`, `cache/`, `broadcast/`
 
 ### Step 0.8 — Lint & Format Configuration
 - [ ] `rustfmt.toml` with project-wide formatting rules

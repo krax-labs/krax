@@ -1,0 +1,4 @@
+# Foundry build artifacts and deployment records.
+out/
+cache/
+broadcast/
