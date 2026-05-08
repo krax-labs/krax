@@ -1,0 +1,7 @@
+# clippy.toml — threshold tuning for clippy lints.
+# Allow/deny policy lives in [workspace.lints.clippy] in root Cargo.toml.
+# See: https://doc.rust-lang.org/clippy/configuration.html
+cognitive-complexity-threshold = 25
+too-many-arguments-threshold   = 7
+too-many-lines-threshold       = 80
+type-complexity-threshold      = 250

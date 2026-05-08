@@ -120,3 +120,36 @@ dashmap = "6"
 proptest          = "1"
 rstest            = "0.26"
 pretty_assertions = "1"
+
+# ---------------------------------------------------------------------------
+# Workspace-level lint policy (Rust 1.74+, Cargo workspace inheritance).
+# Per-crate Cargo.toml files opt in via [lints] workspace = true.
+# ---------------------------------------------------------------------------
+
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+# AGENTS.md code quality rules enforced at workspace level.
+dbg_macro     = "deny"
+todo          = "deny"
+unimplemented = "deny"
+unwrap_used   = "deny"
+
+# Pedantic group at priority -1; individual overrides below take precedence.
+# Note: make lint runs with -D warnings, so pedantic = "warn" is effectively
+# enforced as an error. Any pedantic lint that fires must be fixed or suppressed
+# at the call site with a documented reason.
+pedantic = { level = "warn", priority = -1 }
+
+# Suppress pedantic lints that fire on valid Krax patterns.
+# module_name_repetitions: domain types (RwSetError, SequencerError, MptState)
+#   live in modules named after the concept. Repetition is intentional.
+# must_use_candidate: constructors, builders, getters don't need #[must_use].
+# missing_errors_doc: deferred — covered by missing_docs = "warn" above.
+# missing_panics_doc: same reasoning as missing_errors_doc.
+module_name_repetitions = "allow"
+must_use_candidate      = "allow"
+missing_errors_doc      = "allow"
+missing_panics_doc      = "allow"

@@ -16,3 +16,6 @@ authors.workspace    = true
 [features]
 # Empty placeholder; integration tests gated behind this flag land in Phase 1+.
 integration = []
+
+[lints]
+workspace = true

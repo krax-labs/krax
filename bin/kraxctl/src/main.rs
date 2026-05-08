@@ -1,3 +1,5 @@
+//! Krax operator CLI (`kraxctl`).
+
 // Per Context7 (clap 4.x, docs.rs/clap/latest, May 2026):
 // `CommandFactory::command()` accesses the underlying `Command` from a
 // `Parser` derive — source: docs.rs/clap/latest/clap/builder/struct.Command.html

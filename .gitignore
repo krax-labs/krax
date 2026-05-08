@@ -26,3 +26,5 @@ coverage/
 *.pdb
 **/mutants.out*/
 rustc-ice-*.txt
+ARCHITECTURE.md
+AGENTS.md
