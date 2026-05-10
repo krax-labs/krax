@@ -7,8 +7,10 @@ repository.workspace = true
 authors.workspace    = true
 
 [dependencies]
-# Intentionally empty. Dependencies are added in the phase where this crate
-# first needs them, per AGENTS.md Rule 10.
+# B256 (= FixedBytes<32>) is the slot key and value type throughout the State trait.
+alloy-primitives = { workspace = true }
+# Per-crate typed errors per AGENTS.md Rule 3.
+thiserror        = { workspace = true }
 
 [features]
 # Empty placeholder; integration tests gated behind this flag land in Phase 1+.

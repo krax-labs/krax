@@ -609,8 +609,35 @@ All ten decisions settled in docs/plans/step-1.1a-decisions.md.
 
 ## Outcomes
 
-> **To be filled in by the coder after execution.**
->
-> Record: which verification steps passed on first attempt, which required a fix and why,
-> any unexpected lint or compiler behavior, and the actual line counts / file sizes of the
-> new files. Follow the pattern from `docs/plans/archive/step-0.9-readme.md § Outcomes`.
+- **All 9 execution steps completed in order, first attempt.** No fixes required at any step.
+  All 10 verification commands passed on first attempt with no unexpected lint or compiler
+  behavior.
+
+- **`make build` — ✅ first attempt.** Compiled `alloy-primitives v1.5.7` and `thiserror v2.0.18`
+  as new deps; `krax-types` compiled cleanly. Object-safety assertions (`const _: Option<&dyn
+  State> = None;` and `const _: Option<&dyn Snapshot> = None;`) fired without issue. Both traits
+  confirmed object-safe by the compiler.
+
+- **`make lint` — ✅ first attempt.** No pedantic violations, no `missing_docs` warnings, no
+  `unwrap_used` or `HashMap`/`HashSet` issues in new code. `module_name_repetitions` did not fire
+  on `StateError` in module `state` (it is in the workspace `allow` list and correctly suppressed).
+
+- **`make test` — ✅ first attempt.** No regressions; 0 tests in `krax-types` (expected — Step
+  1.1a specifies no test code).
+
+- **`cargo doc --workspace --no-deps` — ✅ first attempt.** Every public item in `state.rs` and
+  `snapshot.rs` has a `///` doc comment. Anonymous `const _` items did not trigger `missing_docs`
+  (as predicted in the "Open questions" section).
+
+- **HashMap/HashSet grep — ✅ first attempt.** `grep -E '(HashSet|HashMap)'
+  crates/krax-types/src/*.rs` produced no output (exit 1 = no match = pass).
+
+- **ARCHITECTURE.md edits — ✅ first attempt.** All six grep checks passed: Step 1.1a heading ✅,
+  all four checkboxes `[x]`, Step 1.4 third checkpoint updated to `trybuild`/`compile_fail`.
+
+- **AGENTS.md edits — ✅ first attempt.** Current State replaced; Session 11 appended at bottom.
+
+- **Actual line counts:** `state.rs` = 52 lines, `snapshot.rs` = 30 lines, `lib.rs` = 11 lines.
+
+- **No deviations from the plan.** The plan's file contents were applied verbatim. No improvised
+  changes, no code beyond what was specified.
