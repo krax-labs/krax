@@ -11,6 +11,9 @@ pub mod snapshot;
 pub mod state;
 pub mod tx;
 
+#[cfg(test)]
+mod test_helpers;
+
 pub use block::Block;
 pub use journal::{Journal, JournalEntry};
 pub use rwset::RWSet;

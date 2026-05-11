@@ -77,3 +77,99 @@ impl RWSet {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+
+    use super::RWSet;
+    use crate::test_helpers::{concrete, slot};
+
+    // ── conflicts ────────────────────────────────────────────────────────────────
+    // Per Decision 5: each case asserts both a.conflicts(&b) and b.conflicts(&a)
+    // (inline symmetry) — no separate symmetry test needed.
+
+    #[rstest]
+    #[case::disjoint_no_conflict(
+        concrete([slot(1)], [slot(2)]),
+        concrete([slot(3)], [slot(4)]),
+        false,
+    )]
+    #[case::write_read_overlap_conflicts(
+        concrete([], [slot(1)]),
+        concrete([slot(1)], []),
+        true,
+    )]
+    #[case::write_write_overlap_conflicts(
+        concrete([], [slot(1)]),
+        concrete([], [slot(1)]),
+        true,
+    )]
+    #[case::read_write_reversed_conflicts(
+        concrete([slot(1)], []),
+        concrete([], [slot(1)]),
+        true,
+    )]
+    #[case::read_read_only_no_conflict(
+        concrete([slot(1)], []),
+        concrete([slot(1)], []),
+        false,
+    )]
+    #[case::everything_vs_concrete_conflicts(
+        RWSet::Everything,
+        concrete([slot(1)], [slot(2)]),
+        true,
+    )]
+    #[case::concrete_vs_everything_conflicts(
+        concrete([slot(1)], [slot(2)]),
+        RWSet::Everything,
+        true,
+    )]
+    #[case::everything_vs_everything_conflicts(
+        RWSet::Everything,
+        RWSet::Everything,
+        true,
+    )]
+    fn conflicts(#[case] a: RWSet, #[case] b: RWSet, #[case] expected: bool) {
+        assert_eq!(a.conflicts(&b), expected);
+        assert_eq!(b.conflicts(&a), expected);
+    }
+
+    // ── union ─────────────────────────────────────────────────────────────────────
+
+    #[rstest]
+    #[case::empty_union_empty(
+        concrete([], []),
+        concrete([], []),
+        concrete([], []),
+    )]
+    #[case::disjoint_slots_merged(
+        concrete([slot(1)], [slot(2)]),
+        concrete([slot(3)], [slot(4)]),
+        concrete([slot(1), slot(3)], [slot(2), slot(4)]),
+    )]
+    #[case::overlapping_reads_deduped(
+        concrete([slot(1), slot(2)], []),
+        concrete([slot(2), slot(3)], []),
+        concrete([slot(1), slot(2), slot(3)], []),
+    )]
+    #[case::overlapping_writes_deduped(
+        concrete([], [slot(1), slot(2)]),
+        concrete([], [slot(2), slot(3)]),
+        concrete([], [slot(1), slot(2), slot(3)]),
+    )]
+    #[case::everything_union_concrete_is_everything(
+        RWSet::Everything,
+        concrete([slot(1)], [slot(2)]),
+        RWSet::Everything,
+    )]
+    #[case::concrete_union_everything_is_everything(
+        concrete([slot(1)], [slot(2)]),
+        RWSet::Everything,
+        RWSet::Everything,
+    )]
+    fn union(#[case] a: RWSet, #[case] b: RWSet, #[case] expected: RWSet) {
+        assert_eq!(a.union(&b), expected);
+    }
+}
