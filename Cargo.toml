@@ -63,8 +63,9 @@ reth-evm             = { git = "https://github.com/paradigmxyz/reth", rev = "02d
 reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "02d1776786abc61721ae8876898ad19a702e0070", default-features = false }
 
 # --- Ethereum types ---
-# ✅ Context7 (/alloy-rs/alloy + /alloy-rs/core, 2026-05-06): version "1" confirmed.
+# ✅ Context7 (/alloy-rs/alloy + /alloy-rs/core, 2026-05-06; alloy-consensus added 2026-05-09): version "1" confirmed for all four.
 alloy-primitives = { version = "1", default-features = false, features = ["serde"] }
+alloy-consensus  = { version = "1", default-features = false }
 alloy-rpc-types  = { version = "1", default-features = false }
 alloy-sol-types  = { version = "1", default-features = false }
 

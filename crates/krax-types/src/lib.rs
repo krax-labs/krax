@@ -4,8 +4,16 @@
 //! All other crates depend on the traits defined here; none import concrete types
 //! from each other directly. See AGENTS.md Rule 1.
 
+pub mod block;
+pub mod journal;
+pub mod rwset;
 pub mod snapshot;
 pub mod state;
+pub mod tx;
 
+pub use block::Block;
+pub use journal::{Journal, JournalEntry};
+pub use rwset::RWSet;
 pub use snapshot::Snapshot;
 pub use state::{State, StateError};
+pub use tx::{MempoolEntry, PendingTx};

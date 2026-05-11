@@ -9,6 +9,8 @@ authors.workspace    = true
 [dependencies]
 # B256 (= FixedBytes<32>) is the slot key and value type throughout the State trait.
 alloy-primitives = { workspace = true }
+# TxEnvelope (EIP-2718 wire-format signed transaction) wraps PendingTx.
+alloy-consensus  = { workspace = true }
 # Per-crate typed errors per AGENTS.md Rule 3.
 thiserror        = { workspace = true }
 
