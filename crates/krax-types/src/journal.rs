@@ -13,6 +13,7 @@ use crate::state::{State, StateError};
 /// own journal inside the EVM executor; Krax's `JournalEntry` only needs to
 /// know what value to restore if this tx is discarded.
 /// See step-1.1b-decisions.md Decision 8.
+#[derive(Debug, PartialEq, Eq)]
 pub struct JournalEntry {
     /// Storage slot written.
     pub slot: B256,
@@ -28,6 +29,7 @@ pub struct JournalEntry {
 /// execution isolated from other workers and from committed state. After the
 /// commit phase verifies no conflicts, [`apply`][Journal::apply] flushes the
 /// journal to state. On conflict, [`discard`][Journal::discard] drops it.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Journal {
     /// Writes in the order they occurred during speculative execution.
     ///

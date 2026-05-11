@@ -17,6 +17,8 @@ use alloy_primitives::B256;
 /// Block hash (`keccak(RLP(header))`) is deferred to Phase 11 — no hash field
 /// or hash method exists here. Adding either would require RLP infrastructure
 /// not yet planned. See step-1.1b-decisions.md Decision 4.
+// Per Context7 (/alloy-rs/alloy, 2026-05-11): TxEnvelope does not derive PartialEq — fallback path (Decision 3).
+#[derive(Debug)]
 pub struct Block {
     /// Hash of the parent block's header.
     pub parent_hash: B256,

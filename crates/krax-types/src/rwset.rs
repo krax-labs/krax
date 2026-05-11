@@ -13,6 +13,7 @@ use alloy_primitives::B256;
 /// and [`conflicts`][RWSet::conflicts] remove all in-tree clone call sites at this
 /// stage. Derive `Clone` when a real call site needs it.
 /// See step-1.1b-decisions.md Decision 7.
+#[derive(Debug, PartialEq, Eq)]
 pub enum RWSet {
     /// Concrete read and write sets inferred or measured for a transaction.
     Concrete {

@@ -17,6 +17,8 @@ use alloy_primitives::Address;
 /// This is a newtype wrapper, not a re-export. The wrapper adds a stable
 /// Krax-specific attachment point for future methods without modifying alloy
 /// types directly.
+// Per Context7 (/alloy-rs/alloy, 2026-05-11): TxEnvelope does not derive PartialEq — fallback path (Decision 3).
+#[derive(Debug)]
 pub struct PendingTx {
     /// The signed EIP-2718 envelope wrapping the typed transaction.
     pub tx: TxEnvelope,
@@ -33,6 +35,7 @@ pub struct PendingTx {
 /// mempool layer violates AGENTS.md Rule 7 because two sequencers stamping
 /// independently would produce different blocks from the same transaction
 /// stream. See step-1.1b-decisions.md Decision 2.
+#[derive(Debug)]
 pub struct MempoolEntry {
     /// The wrapped wire-format transaction.
     pub tx: PendingTx,
