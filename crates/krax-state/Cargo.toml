@@ -7,8 +7,14 @@ repository.workspace = true
 authors.workspace    = true
 
 [dependencies]
-# Intentionally empty. Dependencies are added in the phase where this crate
-# first needs them, per AGENTS.md Rule 10.
+# MptState implements State and Snapshot from krax-types.
+krax-types        = { path = "../krax-types" }
+# B256 is used directly in mpt/mod.rs; krax-types does not re-export it.
+alloy-primitives  = { workspace = true }
+
+[dev-dependencies]
+rstest            = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [features]
 # Empty placeholder; integration tests gated behind this flag land in Phase 1+.

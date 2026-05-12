@@ -629,6 +629,12 @@ version = "0.1.0"
 [[package]]
 name = "krax-state"
 version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "krax-types",
+ "pretty_assertions",
+ "rstest",
+]
 
 [[package]]
 name = "krax-types"
