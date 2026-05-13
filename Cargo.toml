@@ -116,11 +116,12 @@ crossbeam   = "0.8"
 dashmap = "6"
 
 # --- Test-only ---
-# ⚠️ ESTIMATED: proptest 1.x and pretty_assertions 1.x are stable.
+# ⚠️ ESTIMATED: proptest 1.x, pretty_assertions 1.x, tempfile 3.x are stable.
 # ✅ cargo search rstest (2026-05-06): 0.26.1
 proptest          = "1"
 rstest            = "0.26"
 pretty_assertions = "1"
+tempfile          = "3"
 
 # ---------------------------------------------------------------------------
 # Workspace-level lint policy (Rust 1.74+, Cargo workspace inheritance).

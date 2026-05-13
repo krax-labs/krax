@@ -7,14 +7,37 @@ use crate::snapshot::Snapshot;
 
 /// Errors returned by [`State`] and [`Snapshot`] operations.
 ///
-/// Starts with a single variant. `#[non_exhaustive]` ensures downstream match
-/// arms won't break when I/O variants are added in Step 1.3.
+/// `#[non_exhaustive]` ensures downstream match arms won't break when
+/// additional variants are added.
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum StateError {
     /// The snapshot was already released and can no longer be read.
     #[error("snapshot has been released")]
     Released,
+    /// Underlying storage I/O failure.
+    ///
+    /// Source is boxed (`Box<dyn std::error::Error + Send + Sync>`) so
+    /// `krax-types` does not depend on any specific storage backend. V1's
+    /// MDBX backend (Step 1.3b) wraps `reth_db::DatabaseError` here; V2's
+    /// LSM backend will wrap its own error type without touching this enum.
+    /// Trade-off: callers cannot statically downcast to a backend-specific
+    /// error type (Decision 5 maintainer revision).
+    #[error("state I/O error: {0}")]
+    Io(#[source] Box<dyn std::error::Error + Send + Sync>),
+}
+
+impl StateError {
+    /// Constructs an [`StateError::Io`] from any `Send + Sync + 'static` error.
+    ///
+    /// Use this at storage-backend call sites: e.g.
+    /// `reth_db_call().map_err(StateError::io)?`.
+    pub fn io<E>(source: E) -> Self
+    where
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        Self::Io(Box::new(source))
+    }
 }
 
 /// The V1↔V2 state backend contract.

@@ -11,14 +11,33 @@ authors.workspace    = true
 krax-types        = { path = "../krax-types" }
 # B256 is used directly in mpt/mod.rs; krax-types does not re-export it.
 alloy-primitives  = { workspace = true }
+# MDBX env + table + transaction surface for the durable MptState backend (Step 1.3b).
+# LVP finding: `mdbx` feature must be enabled — workspace dep is `default-features = false`
+# and the env/txn surface (DatabaseEnv, init_db) is gated on that feature.
+reth-db           = { workspace = true, features = ["mdbx"] }
+# Optional: required when `integration` feature is on, because
+# `MptState::open_temporary` (cfg'd under `any(test, feature = "integration")`)
+# names `tempfile::TempDir` in its return type. Under `cfg(test)` the
+# dev-dependency below is in scope; under `feature = "integration"` we need
+# this optional regular dep too.
+tempfile          = { workspace = true, optional = true }
 
 [dev-dependencies]
 rstest            = { workspace = true }
 pretty_assertions = { workspace = true }
+# tempfile-backed test fixtures: MptState::open_temporary + restart tests (Step 1.3b).
+tempfile          = { workspace = true }
 
 [features]
-# Empty placeholder; integration tests gated behind this flag land in Phase 1+.
-integration = []
+# `integration` gates filesystem-touching tests per AGENTS.md Rule 5.
+# First user: tests/restart.rs (Step 1.3b). Pulls in the `tempfile` optional
+# dep so `MptState::open_temporary` compiles in non-test builds too.
+integration = ["dep:tempfile"]
 
 [lints]
 workspace = true
+
+[[test]]
+name              = "restart"
+path              = "tests/restart.rs"
+required-features = ["integration"]
