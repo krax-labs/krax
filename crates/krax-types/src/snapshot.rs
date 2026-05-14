@@ -20,8 +20,24 @@ pub trait Snapshot: Send + Sync {
     /// Releases this snapshot, consuming it.
     ///
     /// Post-release reads on the same handle are a compile-time error, not a
-    /// runtime check. Step 1.4 tests this via `trybuild` or a `compile_fail`
-    /// doctest.
+    /// runtime check. The receiver `self: Box<Self>` is consumed; any subsequent
+    /// use of the original `Box<dyn Snapshot>` triggers E0382 ("borrow of moved
+    /// value"). Verified by the `compile_fail` doctest below (Step 1.4
+    /// Decisions 3 + 4 — `compile_fail` doctest only, hosted on the trait method;
+    /// trait-level stub keeps the doctest free of `krax-state` and `tempfile`):
+    ///
+    /// ```compile_fail
+    /// # use alloy_primitives::B256;
+    /// # use krax_types::{Snapshot, StateError};
+    /// struct S;
+    /// impl Snapshot for S {
+    ///     fn get(&self, _slot: B256) -> Result<B256, StateError> { Ok(B256::ZERO) }
+    ///     fn release(self: Box<Self>) {}
+    /// }
+    /// let s: Box<dyn Snapshot> = Box::new(S);
+    /// s.release();
+    /// drop(s); // error[E0382]: use of moved value: `s`
+    /// ```
     fn release(self: Box<Self>);
 }
 

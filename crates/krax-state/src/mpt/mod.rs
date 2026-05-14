@@ -192,6 +192,8 @@ impl State for MptState {
 ///
 /// Owns a reth-db `RoTxn` (Decision 3); reads traverse the txn directly. Drop
 /// releases the MDBX reader slot via the txn's `Drop` impl (Decision 11).
+// Drop: relies on `tx`'s auto-Drop, which releases the MDBX reader slot
+// (Step 1.4 Decision 13 — RAII; no explicit Drop impl, no explicit abort()).
 #[derive(Debug)]
 pub struct MptSnapshot {
     tx: <DatabaseEnv as Database>::TX,

@@ -41,3 +41,8 @@ workspace = true
 name              = "restart"
 path              = "tests/restart.rs"
 required-features = ["integration"]
+
+[[test]]
+name              = "snapshot_isolation"
+path              = "tests/snapshot_isolation.rs"
+required-features = ["integration"]
