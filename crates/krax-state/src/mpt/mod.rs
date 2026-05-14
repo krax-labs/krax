@@ -67,51 +67,14 @@ use std::sync::Arc;
 use alloy_primitives::B256;
 use krax_types::{Snapshot, State, StateError};
 use reth_db::{
-    Database, DatabaseError,
+    Database,
     mdbx::{DatabaseArguments, DatabaseEnv, init_db_for},
-    table::{Table, TableInfo},
-    tables::TableSet,
     transaction::{DbTx, DbTxMut},
 };
 
-/// Flat slot table backing [`MptState`].
-///
-/// Key: [`B256`] storage slot identifier (encoded as 32 raw bytes via the
-/// `Encode`/`Decode` impls in `reth-db`).
-/// Value: `Vec<u8>` carrying exactly 32 bytes (the B256 value). The Value-type
-/// choice is an LVP-driven deviation — see the crate-level docs above.
-#[derive(Debug)]
-pub struct Slots;
+mod slots;
 
-impl Table for Slots {
-    const NAME: &'static str = "Slots";
-    const DUPSORT: bool = false;
-    type Key = B256;
-    type Value = Vec<u8>;
-}
-
-impl TableInfo for Slots {
-    fn name(&self) -> &'static str {
-        Self::NAME
-    }
-
-    fn is_dupsort(&self) -> bool {
-        Self::DUPSORT
-    }
-}
-
-/// [`TableSet`] enumeration for [`init_db_for`].
-///
-/// Single-table set — registers [`Slots`] with the MDBX environment on
-/// first open so subsequent `put`/`get` calls observe a valid sub-database.
-#[derive(Debug)]
-struct SlotsTableSet;
-
-impl TableSet for SlotsTableSet {
-    fn tables() -> Box<dyn Iterator<Item = Box<dyn TableInfo>>> {
-        Box::new(std::iter::once(Box::new(Slots) as Box<dyn TableInfo>))
-    }
-}
+use slots::{Slots, SlotsTableSet};
 
 /// Converts any `Display`-able error (notably `eyre::Report`) to a
 /// [`StateError::Io`] via an [`std::io::Error`] wrapper.
@@ -249,13 +212,6 @@ impl Snapshot for MptSnapshot {
         // No explicit `RoTxn::abort()` call (LVP Query 8 conditional).
     }
 }
-
-// `DatabaseError` is brought into scope at the top of the file so the
-// `.map_err(StateError::io)?` calls type-check (StateError::io's bound is
-// `E: std::error::Error + Send + Sync + 'static`, satisfied by DatabaseError).
-// Suppress "unused import" since the type isn't named directly in this module
-// — `?` propagation handles it via the From-equivalent generic constructor.
-const _USES_DATABASE_ERROR_FOR_MAP_ERR: Option<DatabaseError> = None;
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]

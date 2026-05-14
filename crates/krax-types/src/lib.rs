@@ -6,6 +6,7 @@
 
 pub mod block;
 pub mod journal;
+pub mod journal_entry;
 pub mod rwset;
 pub mod snapshot;
 pub mod state;
