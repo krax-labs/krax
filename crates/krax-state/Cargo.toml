@@ -11,10 +11,16 @@ authors.workspace    = true
 krax-types        = { path = "../krax-types" }
 # B256 is used directly in mpt/mod.rs; krax-types does not re-export it.
 alloy-primitives  = { workspace = true }
+# RLP encoding for trie nodes + the storage-slot value strip-leading-zeros transform (Step 1.5).
+# Per Context7 LVP-Q1 (2026-05-15, /alloy-rs/rlp 0.3.15): canonical Ethereum-stack RLP crate.
+alloy-rlp         = { workspace = true }
 # MDBX env + table + transaction surface for the durable MptState backend (Step 1.3b).
 # LVP finding: `mdbx` feature must be enabled — workspace dep is `default-features = false`
 # and the env/txn surface (DatabaseEnv, init_db) is gated on that feature.
 reth-db           = { workspace = true, features = ["mdbx"] }
+# tracing::error! before panicking on internal MDBX read failure in
+# MptState::root / MptSnapshot::root (Step 1.5 Decision 12 (d)).
+tracing           = { workspace = true }
 # Optional: required when `integration` feature is on, because
 # `MptState::open_temporary` (cfg'd under `any(test, feature = "integration")`)
 # names `tempfile::TempDir` in its return type. Under `cfg(test)` the
@@ -25,6 +31,10 @@ tempfile          = { workspace = true, optional = true }
 [dev-dependencies]
 rstest            = { workspace = true }
 pretty_assertions = { workspace = true }
+# Parses the static MPT-root fixture (tests/fixtures/mpt_roots.json) in the
+# trie::tests::fixture_file_vectors unit test (Step 1.5). Already a workspace
+# dep — Rule 10 approved (serde + serde_json); no approved-dep-list change.
+serde_json        = { workspace = true }
 # tempfile-backed test fixtures: MptState::open_temporary + restart tests (Step 1.3b).
 tempfile          = { workspace = true }
 

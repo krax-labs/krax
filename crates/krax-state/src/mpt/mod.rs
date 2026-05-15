@@ -73,6 +73,7 @@ use reth_db::{
 };
 
 mod slots;
+mod trie;
 
 use slots::{Slots, SlotsTableSet};
 

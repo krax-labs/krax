@@ -1856,11 +1856,14 @@ name = "krax-state"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "alloy-rlp",
  "krax-types",
  "pretty_assertions",
  "reth-db",
  "rstest",
+ "serde_json",
  "tempfile",
+ "tracing",
 ]
 
 [[package]]

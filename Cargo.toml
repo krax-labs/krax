@@ -64,10 +64,15 @@ reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "02d
 
 # --- Ethereum types ---
 # ✅ Context7 (/alloy-rs/alloy + /alloy-rs/core, 2026-05-06; alloy-consensus added 2026-05-09): version "1" confirmed for all four.
+# ✅ Context7 LVP-Q1 (Step 1.5, 2026-05-15, /alloy-rs/rlp): alloy-rlp current stable 0.3.15 — pin "0.3"
+#    (0.x minor-pin convention, cf. jsonrpsee "0.26"). default = ["std"]; std only gates
+#    bytes/std + arrayvec/std + std::error::Error, so `encode()` / `Encodable` / `Header`
+#    remain available under default-features = false (they use `alloc` unconditionally).
 alloy-primitives = { version = "1", default-features = false, features = ["serde"] }
 alloy-consensus  = { version = "1", default-features = false }
 alloy-rpc-types  = { version = "1", default-features = false }
 alloy-sol-types  = { version = "1", default-features = false }
+alloy-rlp        = { version = "0.3", default-features = false }
 
 # --- JSON-RPC server ---
 # ✅ cargo search jsonrpsee (2026-05-06): 0.26.0
