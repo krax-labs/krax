@@ -48,14 +48,6 @@
 //! later without a rewrite (D5 (a) — we did NOT close that door), but
 //! Step 1.5 does not ship it.
 
-// Step 1.5 Commit 1 ships the trie internals unit-tested but NOT yet wired
-// into `MptState::root` / `MptSnapshot::root` (that wiring is Commit 2).
-// In the non-test lib build these items have no caller, so `dead_code`
-// would fire under `make lint`'s `-D warnings`. Commit 2 removes this
-// allow once the wiring makes them reachable (so it cannot mask real dead
-// code afterwards). See docs/plans/step-1.5-plan.md Commit 2.
-#![allow(dead_code)]
-
 use std::collections::BTreeMap;
 
 use alloy_primitives::{B256, keccak256};

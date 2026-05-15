@@ -1097,34 +1097,116 @@ All Commit 1 rows (1–22) must still pass on the cumulative tree. New rows for 
 feat(state,types): wire MPT root through Snapshot::root + State::root — Step 1.5 (2/2)
 ```
 
-## Outcomes — Commit 2 (coder fills in at execution time)
+## Outcomes — Commit 2 (filled in at execution time, 2026-05-15)
 
 ### Files changed
 
-- *Coder fills in.*
+- `crates/krax-types/src/snapshot.rs` — added `fn root(&self) -> B256;` to the `Snapshot` trait (Rule 8 surface change, D1 (a)) between `get` and `release`, with a doc comment (D1 + Step 2.1/2.2 prose); extended the 1.4 `compile_fail` doctest's `impl Snapshot for S` stub with `fn root(&self) -> B256 { B256::ZERO }`. `drop(s);` E0382 trigger, `Send + Sync` supertrait, and `const _: Option<&dyn Snapshot> = None;` object-safety assertion all preserved.
+- `crates/krax-types/src/state.rs` — `State::root` doc comment gained a `# Panics` section (D12 (d)). **Signature unchanged** (`fn root(&self) -> B256;`); `StateError`/trait surface untouched.
+- `crates/krax-state/src/mpt/mod.rs` — imports: `std::sync::OnceLock`, `reth_db::cursor::DbCursorRO` (for the LVP-Q5-confirmed `.walk`). `MptState` + `MptSnapshot` each gained `cached_root: OnceLock<B256>` (D2 (b)/D3 (b)). `MptState::open`/`snapshot` initialize the field; `set` invalidates it; `commit` repopulates it with the post-commit root (D19 (a)); `root` = `*self.cached_root.get_or_init(|| self.compute_root_from_storage())`; new private `compute_root_from_storage` (D8 (a) cursor walk, D12 (d) 4 panic sites). `MptSnapshot::root` added (D1/D3 (b)/D8 (a)/D12 (d), 3 panic sites over the snapshot's held RO txn). `// TODO Step 1.5` placeholder removed; `MptSnapshot` doc comment updated.
+- `crates/krax-state/src/mpt/trie.rs` — **Step 2.0 delta:** removed the Commit-1 `#![allow(dead_code)]` + its Commit-1-only comment block (the wiring makes all items reachable).
+- `crates/krax-state/tests/snapshot_isolation.rs` — appended three root-isolation tests (D17 (a)): `root_after_write_does_not_bleed_in`, `root_after_commit_does_not_bleed_in`, `two_snapshot_root_independence`. Existing get-isolation tests untouched.
+- `ARCHITECTURE.md` — Step 1.5 heading `✅`, five `- [x]`; Phase 1 Gate "Real MPT root computation in place" line already `✅` (goal-state convention — no text edit). (gitignored — `git add -f`.)
+- `AGENTS.md` — Current Phase → "Step 1.5 complete; **Phase 1 Gate satisfied** — Phase 2 next"; new "What was just completed (Step 1.5 …)" two-commit block atop the stack; "What to do next" → Phase 2 entry; four Notes bullets added; Domain Concepts gained MPT / Trie Node / Storage Root; Changelog Session 18 appended at BOTTOM (last line = commit-message #2). **Plan Step 2.7 skipped** — alloy-rlp Rule 10 entry already landed in Commit 1 (Delta 1). (gitignored — `git add -f`.)
+- `docs/plans/step-1.5-plan.md` — this Commit 2 Outcomes block filled in.
+- Cargo.toml / Cargo.lock — **unchanged in Commit 2** (no dep changes; all dep work was Commit 1).
 
 ### Verification table results (cumulative — Commit 1 rows 1–22 + Commit 2 rows 23–47)
 
-- *Coder fills in.*
+Commit 1 rows 1–22: re-confirmed on the cumulative tree — all PASS. Row 5 (coverage) is re-evaluated cumulatively at row 34 below (now FAIL-BY-DESIGN — see Coverage delta).
+
+| # | Result | Evidence |
+|---|---|---|
+| 23 | PASS | `fn root(&self) -> B256;` on the `Snapshot` trait (snapshot.rs:37). |
+| 24 | PASS | doctest stub has `fn root(&self) -> B256 { B256::ZERO }` (snapshot.rs:54); `drop(s); // error[E0382]` preserved (snapshot.rs:59). |
+| 25 | PASS | `# Panics` in `State::root` doc (state.rs:71); signature `fn root(&self) -> B256;` unchanged (state.rs:83). |
+| 26 | PASS | No `B256::ZERO` in `MptState::root` body (now `*self.cached_root.get_or_init(...)`); no `TODO Step 1.5` match anywhere. Remaining `B256::ZERO` matches are the pre-existing `State::get`/`Snapshot::get` empty-key returns + test module. |
+| 27 | PASS | `cached_root: OnceLock<B256>` in BOTH `MptState` (mod.rs:110) and `MptSnapshot` (mod.rs:266) structs; constructed/invalidated/repopulated at 122/226/211/236. |
+| 28 | PASS | `tracing::error!.*MDBX.*root` ×9, `panic!.*MDBX.*root` ×9 (≥4 each): 5+5 in `MptState::compute_root_from_storage` (txn open, cursor open, walk, decode, Err-arm), 4+4 in `MptSnapshot::root` (cursor open, walk, decode, Err-arm). |
+| 29 | PASS | `MptSnapshot::root` returns non-zero for non-empty state — `two_snapshot_root_independence` asserts `root_a != root_b` (distinct real roots) and root stability; all 3 root-isolation integration tests pass. |
+| 30 | PASS | `make build` exit 0. |
+| 31 | PASS | `make lint` exit 0; clean (no `dead_code` after Step 2.0 allow removal — `cargo build -p krax-state` confirmed zero residual). |
+| 32 | PASS | `make test` exit 0; krax-state lib 12 + krax-types 14; doctests: `Snapshot::release - compile fail … ok` (now line 48) + `Journal::discard - compile fail … ok` + 1 ignored. |
+| 33 | PASS | `make test-integration` exit 0; restart 2 + `snapshot_isolation` **6** (3 preexisting get-isolation + 3 new root-isolation). |
+| 34 | **FAIL (BY DESIGN, pre-existing — documented, NOT masked)** | `make coverage` exit 2 — workspace-total **82.64% lines** < `--fail-under-lines 85`. Per-crate Phase 1 Gate targets HOLD: **krax-state 85.15%** (357 lines, 53 missed: mod.rs 72.97% / trie.rs 93.78%), **krax-types 85.0%** (unchanged from 1.4). Failure is bin-driven (`bin/*/main.rs` 12 lines @ 0%, unchanged since 1.3.5) PLUS the new D12 (d)-mandated defensive panic arms (7 sites, untestable without out-of-scope MDBX fault injection). Exactly the dispatch-predicted recurrence. **No `--ignore-filename-regex` change** (dispatch forbids; D15 hold-only). See Coverage delta. |
+| 35 | PASS | `### Step 1.5 — MPT Root Computation ✅` (ARCHITECTURE.md:153); 5 `- [x]`; "Real MPT root computation in place (Step 1.5 ✅)" gate line present (goal-state ✅ per 1.3a/1.3b/1.4 convention). |
+| 36 | PASS | `Step 1.5 complete` + `Phase 1 Gate satisfied` both in AGENTS.md Current State. |
+| 37 | PASS | Domain Concepts has `**MPT (Merkle…`, `**Trie Node`, `**Storage Root` (3 matches, none pre-existing — grep-verified absent first). |
+| 38 | PASS | `alloy-rlp` ×3 in AGENTS.md — Rule 10 line (Commit 1, persists) + Current State + Changelog Session 18. |
+| 39 | PASS | `tail -1 AGENTS.md` = `2. \`feat(state,types): wire MPT root through Snapshot::root + State::root — Step 1.5 (2/2)\`` (Session 18's last line; Session 18 present in tail). |
+| 40 | PASS | `cargo test --doc -p krax-types`: `Journal::discard (line 52) - compile fail … ok` AND `Snapshot::release (line 48) - compile fail … ok` (1.4 invariant preserved across the stub extension; line moved 29→48 due to the added `root` doc). |
+| 41 | PASS | No new `crates/<name>/Cargo.toml`. |
+| 42 | PASS | No `reth-trie`/`alloy-trie` in `Cargo.toml`/`crates/*/Cargo.toml`. |
+| 43 | PASS | No `proptest` in `krax-types`/`krax-state` Cargo.toml. |
+| 44 | PASS | `git diff -- state.rs \| grep '^[+-] *fn '` → none (only `# Panics` doc additions; signature verbatim). |
+| 45 | PASS (intent; grep-literalism noted) | `Snapshot` trait body gained EXACTLY ONE method: `+    fn root(&self) -> B256;`. The row's raw grep also matches `+    ///     fn root(&self) -> B256 { B256::ZERO }` — the doctest-stub line that **plan Step 2.1 + the cross-step reconciliation explicitly mandate**. Excluding `///` doctest lines, exactly one `fn` added to the trait. Object-safety assertion intact (snapshot.rs:66). |
+| 46 | PASS | Commit-2 diff = snapshot.rs (1 trait method + doc + mandated doctest stub), state.rs (doc only), mod.rs (wiring + memo fields), snapshot_isolation.rs (3 appended tests), trie.rs (allow removed), ARCHITECTURE.md/AGENTS.md docs. No per-account/world trie, no proof gen, no ZK hashes, no sidecar nodes table, no archive, no alloy-trie/reth-trie shipped, no new crates, no `state.rs` edits beyond the `# Panics` doc. |
+| 47 | PASS | Commit-1 LVP Q1–Q6 carried forward unchanged. One additional Commit-2 surface: `reth_db::cursor::DbCursorRO` for `.walk` — already covered by Commit-1 LVP-Q5 (which documented `walk`/`Walker`). `OnceLock::{new,set,get_or_init}` are std (low-priority, stable — no LVP needed). No Q7 required. |
+
+Summary: 46/47 PASS; **row 34 = FAIL (BY DESIGN, pre-existing + new defensive arms)** — the dispatch-predicted, accepted state; per-crate Phase 1 Gate held; no masking change. (Row 45 PASS on intent; the grep also matching the plan-mandated doctest-stub line is documented, not a defect.)
 
 ### Deviations from plan
 
-- *Coder fills in.*
+- **Delta 1 — Plan Step 2.7 skipped.** The `alloy-rlp` AGENTS.md Rule 10 entry landed in Commit 1 per D4 ("same commit as the dep") + the 1.3b `tempfile` precedent + the dispatch. Step 2.7 is a no-op for Commit 2; the edit was NOT re-applied. Cumulative verification row 38 still asserts presence (passes against the persisted Commit-1 state).
+- **Delta 2 — Step 2.0 preflight executed.** Removed `#![allow(dead_code)]` (and its Commit-1-only comment) from `mpt/trie.rs`. `cargo build -p krax-state` post-removal: clean, **zero residual dead-code warnings** — the wiring (`MptState::root`/`MptSnapshot::root` → `compute_root` → build → Node/NodeRef/Nibbles/EMPTY_ROOT) makes every trie item reachable.
+- **Delta 3 — `step-1.5-decisions.md` D9 prose** was corrected to strict `< 32` post-Commit-1 and is already on disk/committed. Not surfaced as a deviation per the dispatch.
+- **Added import `reth_db::cursor::DbCursorRO`.** The plan's Step 2.3/2.4 sketch uses `cursor.walk(None)`; `walk` is a `DbCursorRO` method (LVP-Q5-confirmed), so the trait must be in scope. This is a required consequence of the LVP-Q5-confirmed API, not a design change.
+- **`commit` repopulation shape.** `std::sync::OnceLock` has no `From<T>`; the plan's "`OnceLock::from(r)`" sketch isn't a real API. Used the documented "appropriate constructor for the chosen shape": `self.cached_root = OnceLock::new(); let _ = self.cached_root.set(r);` (fresh lock, infallible seed under `&mut self` exclusivity). Semantically identical to the plan's intent (D19 (a)).
+- **Row 45 grep-literalism (documented, not a defect).** `git diff snapshot.rs | grep '^\+.*fn '` returns 2 lines; the second is the `///     fn root(&self) -> B256 { B256::ZERO }` doctest-stub line that Step 2.1's cross-step reconciliation REQUIRES. The trait surface gained exactly one method (intent satisfied). Surfaced here per the hand-off rule; not a HALT (the deliverable is correct and plan-mandated).
+- **No other Old/New drift.** snapshot.rs / state.rs Old blocks matched HEAD verbatim (Commit 1 did not touch krax-types). mod.rs line numbers shifted by Commit 1's `mod trie;` (+1) and the memo-field/import edits; all anchors re-read at execution time.
 
-### Coverage delta (D15 a — pre/post evidence)
+### Coverage delta (D15 (a) — pre/post evidence; hold-only)
 
-- *Coder fills in per the 1.4 Coverage delta table shape; Step 1.5 hold-only.*
+| Scope | Pre-1.5 (1.4 record) | Post-Commit-1 | Post-Commit-2 (final) | Verdict |
+|---|---|---|---|---|
+| `krax-state` per-crate (Phase 1 Gate ≥85%) | 90.0% | ≈92.6% | **85.15%** (357 lines, 53 missed) | HOLD — ≥85% ✓ |
+| `krax-types` per-crate (Phase 1 Gate ≥85%) | 85.0% | 85.0% | **85.0%** (40 lines, 6 missed) | HOLD — ≥85% ✓ (unchanged from 1.4; state.rs 0% = preexisting `StateError::Released` arm, 1.4 D7) |
+| Workspace total lines | 80.99% | 88.60% (transient) | **82.64%** | FAILS `--fail-under-lines 85` — bin-driven (`bin/*/main.rs` 12 lines @0%) + new D12 (d) panic arms |
+
+Per-file post-Commit-2 (`cargo llvm-cov report`, same regex as Makefile): `mpt/mod.rs` 148 lines / 40 missed (72.97%) — the wiring added 7 D12 (d) defensive panic arms (`tracing::error!`+`panic!` on unrecoverable MDBX failure) that are intentionally untested (fault injection is explicitly out of Step 1.5 scope — "ships Ethereum-compatible MPT root computation, nothing more"); `mpt/trie.rs` 209/13 (93.78%); `krax-types/src/state.rs` 5/5 (0% — preexisting `StateError::Released` Display arm, 1.4 Decision 7 = (a)).
+
+**D15 hold-only verdict: SATISFIED.** Per-crate Phase 1 Gate targets both hold (krax-state 85.15%, krax-types 85.0% — both ≥85%). The krax-state 90.0%→85.15% delta is the correctly-added D12 (d) defensive panic arms (unrecoverable storage-corruption paths; the same class of deliberately-untested defensive code as 1.4's `StateError::Released`). The workspace-total `--fail-under-lines 85` failure is the documented pre-existing condition the dispatch explicitly predicted ("the row-5 pre-existing failure from bin-driven coverage will recur; document but do NOT extend `--ignore-filename-regex` to mask it"). **No `Makefile` regex change made.** The right long-term fix (excluding `bin/.*/main\.rs`) is out of Step 1.5 scope, exactly as recorded in the 1.4 Notes.
 
 ### Audit outcome
 
-The audit-outcome block mirrors 1.4's "Audit confirmed complete / Gap surfaced" pattern but is broader for 1.5 because Commit 2 wires the entire trie path. Fill in ONE of the two branches:
-
-- **Wiring confirmed correct:** *Coder writes this if* (i) all 47 verification rows pass; (ii) `make test-integration` proves the three new root-isolation tests pass against the real-root wiring; (iii) the cumulative coverage delta does not regress `krax-types` or `krax-state` below 85%; (iv) the Q1/Q3/Q4/Q5 LVP findings from Commit 1 carried over correctly to Commit 2's code (no late surprises in the cursor API or the alloy-rlp surface).
-- **Q3/Q4/Q5 surfaced spec gap — STOP:** *Coder writes this if* an LVP finding (specifically: a Q3 spec deviation between planner-expected nibble encoding and actual Yellow-Paper / wiki text; a Q4 finding that the canonical Ethereum tests JSON shape is unworkable AND `reth-trie` at the pinned rev does NOT expose a usable `storage_root_of` API; a Q5 finding that the reth-db cursor API at the pinned rev cannot deliver the streaming iteration the algorithm needs without a memory-blowup fallback) reveals a gap that the plan's frozen decisions do NOT authorize. Describe the gap with quoted source evidence, halt before completing Commit 2, and re-surface to the maintainer. The 1.4 "Audit gap surfaced" pattern is the model — Decision 14 forbids freelancing a fix.
+**Wiring confirmed correct.** (i) 46/47 verification rows PASS; row 34 is the dispatch-predicted FAIL-BY-DESIGN coverage state with the per-crate Phase 1 Gate held (krax-state 85.15%, krax-types 85.0%) — not a regression below 85%, not a freelance-able gap; row 45 PASSes on intent. (ii) `make test-integration` proves the three new root-isolation tests (`root_after_write_does_not_bleed_in`, `root_after_commit_does_not_bleed_in`, `two_snapshot_root_independence`) pass against the real-root wiring — `Snapshot::root` reflects the snapshot's frozen view, not live state. (iii) Per-crate coverage does NOT regress below 85% (krax-state 85.15%, krax-types 85.0%); workspace-total failure is bin-driven + accepted defensive arms. (iv) The Commit-1 Q1/Q3/Q4/Q5 LVP findings carried over cleanly: the LVP-Q5 cursor shape (`cursor_read(&self)` → owned cursor; `DbCursorRO::walk(None)` → `Walker: Iterator<Item=Result<(B256,Vec<u8>),_>>`) composes with both wiring sites with **no borrow/lifetime/`'static` gap** — `MptState::compute_root_from_storage` drives `trie::compute_root` to completion over a fresh-RO-txn-owned local cursor before returning; `MptSnapshot::root`'s `get_or_init` closure does the same over the snapshot's held `'static` RO txn and returns only the `Copy` `B256`. Empirically confirmed by `cargo build -p krax-state` clean (post-`#![allow(dead_code)]` removal) + all 6 `snapshot_isolation` + 12 krax-state lib tests passing. No Q3/Q4/Q5 spec gap surfaced; no STOP.
 
 ### Proposed commit message (final)
 
-- *Coder fills in for BOTH commits.*
+Commit 1 (already committed by maintainer):
+```
+feat(state): add MPT trie module with sort-then-build root computation — Step 1.5 (1/2)
+```
+
+Commit 2 (proposed):
+```
+feat(state,types): wire MPT root through Snapshot::root + State::root — Step 1.5 (2/2)
+
+Snapshot::root(&self) -> B256 added to the krax-types trait (Rule 8
+surface change, D1 — second-ever Snapshot surface change; 1.4
+compile_fail doctest stub extended, drop(s) trigger untouched).
+State::root doc gains a # Panics section (D12 — signature unchanged,
+still infallible). MptState/MptSnapshot each gain cached_root:
+OnceLock<B256> (D2/D3); MptState::set invalidates, commit repopulates
+(D19), root memoizes via compute_root_from_storage; MptSnapshot::root
+lazily computes over the snapshot's frozen RO txn. Both walk Slots via
+DbTx::cursor_read -> DbCursorRO::walk (LVP-Q5 @ reth 02d1776) and
+panic after tracing::error! on MDBX failure (D12). Three root-isolation
+tests added to tests/snapshot_isolation.rs (D17). Commit-1
+#![allow(dead_code)] removed (wiring makes trie items reachable).
+ARCHITECTURE.md Step 1.5 closed; Phase 1 Gate satisfied; AGENTS.md
+Current State/Domain Concepts/Changelog Session 18 updated. Plan
+Step 2.7 skipped — alloy-rlp Rule 10 entry landed in Commit 1 (D4).
+
+Coverage: make coverage workspace-total < 85 (bin/*/main.rs 0% +
+D12 defensive panic arms, untestable without out-of-scope fault
+injection); per-crate Phase 1 Gate holds (krax-state 85.15%,
+krax-types 85.0%) — D15 hold-only satisfied, no Makefile mask.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+```
+
+I did NOT run git commit.
 
 ---
 

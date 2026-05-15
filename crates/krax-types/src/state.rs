@@ -67,6 +67,19 @@ pub trait State: Send + Sync {
     /// Returns the current state root without committing pending writes.
     ///
     /// Concrete implementations may return a cached value.
+    ///
+    /// # Panics
+    ///
+    /// The trait signature is infallible (Step 1.5 Decision 12 (d)).
+    /// Implementations MAY `panic!` on unrecoverable internal storage
+    /// failure after emitting `tracing::error!`. The V1 MDBX-backed
+    /// implementation (`MptState::root` in `krax-state`) panics on cursor
+    /// or txn errors during the slot scan — these are unrecoverable for
+    /// the surrounding commit pipeline. Callers must NOT invoke `root`
+    /// against a state whose backing storage is suspected corrupt.
+    ///
+    /// (`MptState` is defined in `krax-state/src/mpt/mod.rs`; it is not
+    /// importable from `krax-types` to avoid a backend dependency.)
     fn root(&self) -> B256;
 }
 

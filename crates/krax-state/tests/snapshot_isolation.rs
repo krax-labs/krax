@@ -74,3 +74,61 @@ fn two_snapshot_independence() {
     snap_a.release();
     snap_b.release();
 }
+
+#[test]
+fn root_after_write_does_not_bleed_in() {
+    // Step 1.5 D17 (a) case 1: snapshot taken at v1, sibling write to v2,
+    // snapshot's root still reflects v1. Mirrors
+    // `write_after_snapshot_does_not_bleed_in` but asserts on
+    // `Snapshot::root` instead of `Snapshot::get`.
+    let (mut state, _tmp) = MptState::open_temporary().unwrap();
+    state.set(slot(1), slot(0xAA)).unwrap();
+
+    let snap = state.snapshot().unwrap();
+    let root_v1 = snap.root();
+
+    state.set(slot(1), slot(0xBB)).unwrap();
+
+    assert_eq!(snap.root(), root_v1);
+    snap.release();
+}
+
+#[test]
+fn root_after_commit_does_not_bleed_in() {
+    // Step 1.5 D17 (a) case 2: snapshot taken at v1, sibling write+commit,
+    // snapshot's root still reflects v1.
+    let (mut state, _tmp) = MptState::open_temporary().unwrap();
+    state.set(slot(2), slot(0x11)).unwrap();
+
+    let snap = state.snapshot().unwrap();
+    let root_v1 = snap.root();
+
+    state.set(slot(2), slot(0x22)).unwrap();
+    state.commit().unwrap();
+
+    assert_eq!(snap.root(), root_v1);
+    snap.release();
+}
+
+#[test]
+fn two_snapshot_root_independence() {
+    // Step 1.5 D17 (a) case 3: snapshot A at v1, sibling write+commit to
+    // v2, snapshot B at v2. A's root != B's root; A's root is unchanged
+    // after B is taken (the per-snapshot cache held).
+    let (mut state, _tmp) = MptState::open_temporary().unwrap();
+    state.set(slot(3), slot(0x01)).unwrap();
+
+    let snap_a = state.snapshot().unwrap();
+    let root_a = snap_a.root();
+
+    state.set(slot(3), slot(0x02)).unwrap();
+    state.commit().unwrap();
+
+    let snap_b = state.snapshot().unwrap();
+    let root_b = snap_b.root();
+
+    assert_ne!(root_a, root_b);
+    assert_eq!(snap_a.root(), root_a); // A's root is stable; the cache held.
+    snap_a.release();
+    snap_b.release();
+}

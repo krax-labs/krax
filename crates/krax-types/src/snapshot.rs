@@ -17,6 +17,25 @@ pub trait Snapshot: Send + Sync {
     /// Returns the value of `slot` at the snapshot's commit point.
     fn get(&self, slot: B256) -> Result<B256, StateError>;
 
+    /// Returns the MPT root as of the snapshot's commit point.
+    ///
+    /// The returned root reflects the state visible to this snapshot —
+    /// NOT the live state, and NOT any post-snapshot commits made on the
+    /// underlying [`State`][crate::State]. Implementations MAY cache the
+    /// computed root for the snapshot's lifetime (the V1 MDBX backend's
+    /// `MptSnapshot` does — Step 1.5 Decision 3 (b)).
+    ///
+    /// Infallible by design (Step 1.5 Decisions 12 (d) + 14 (a)): an
+    /// internal storage-read failure during root computation is
+    /// unrecoverable for the surrounding commit pipeline. Implementations
+    /// MAY `panic!` on storage corruption after emitting
+    /// `tracing::error!`. V1 callers must NOT call `root` against a
+    /// snapshot whose underlying storage is suspected corrupt.
+    ///
+    /// (`MptSnapshot` is defined in `krax-state/src/mpt/mod.rs`; it is not
+    /// importable from `krax-types` to avoid a backend dependency.)
+    fn root(&self) -> B256;
+
     /// Releases this snapshot, consuming it.
     ///
     /// Post-release reads on the same handle are a compile-time error, not a
@@ -32,6 +51,7 @@ pub trait Snapshot: Send + Sync {
     /// struct S;
     /// impl Snapshot for S {
     ///     fn get(&self, _slot: B256) -> Result<B256, StateError> { Ok(B256::ZERO) }
+    ///     fn root(&self) -> B256 { B256::ZERO }
     ///     fn release(self: Box<Self>) {}
     /// }
     /// let s: Box<dyn Snapshot> = Box::new(S);

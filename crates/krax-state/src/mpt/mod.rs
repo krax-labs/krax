@@ -62,12 +62,13 @@
 //!   `reth-db`.
 
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use alloy_primitives::B256;
 use krax_types::{Snapshot, State, StateError};
 use reth_db::{
     Database,
+    cursor::DbCursorRO,
     mdbx::{DatabaseArguments, DatabaseEnv, init_db_for},
     transaction::{DbTx, DbTxMut},
 };
@@ -100,6 +101,13 @@ fn display_to_state<E: std::fmt::Display>(e: E) -> StateError {
 #[derive(Debug)]
 pub struct MptState {
     env: Arc<DatabaseEnv>,
+    /// Memoized MPT root (Step 1.5 Decision 2 (b)). `OnceLock` (not
+    /// `Option`) because `root(&self)` must populate it through a shared
+    /// borrow — `Cell` is not `Sync` and `State: Send + Sync` requires it
+    /// (symmetry with `MptSnapshot`'s `OnceLock`, Decision 3 (b)).
+    /// `set` invalidates by replacing the lock (`&mut self`); `commit`
+    /// repopulates it with the post-commit root (Decision 19 (a)).
+    cached_root: OnceLock<B256>,
 }
 
 impl MptState {
@@ -111,7 +119,7 @@ impl MptState {
     pub fn open(path: &Path) -> Result<Self, StateError> {
         let env = init_db_for::<_, SlotsTableSet>(path, DatabaseArguments::default())
             .map_err(display_to_state)?;
-        Ok(Self { env: Arc::new(env) })
+        Ok(Self { env: Arc::new(env), cached_root: OnceLock::new() })
     }
 
     /// Opens an [`MptState`] rooted at a fresh `TempDir`.
@@ -125,6 +133,48 @@ impl MptState {
             .expect("MptState::open_temporary: tempdir creation failed");
         let state = Self::open(dir.path())?;
         Ok((state, dir))
+    }
+
+    /// Computes the live MPT root by walking the `Slots` table on a fresh
+    /// RO txn (Step 1.5 Decision 8 (a)).
+    ///
+    /// Infallible by design (Decision 12 (d)): an MDBX failure here is
+    /// unrecoverable for the surrounding commit pipeline, so each fallible
+    /// step emits `tracing::error!` then `panic!` rather than swallowing
+    /// the error or widening the [`State::root`] signature. Four panic
+    /// sites: txn open, cursor open, cursor walk, slot-value decode.
+    fn compute_root_from_storage(&self) -> B256 {
+        // Per Context7 LVP-Q5 (reth-db @ 02d1776, Step 1.5):
+        // `DbTx::cursor_read::<T>() -> Result<Self::Cursor<T>, _>`;
+        // `DbCursorRO::walk(None) -> Result<Walker, _>` where
+        // `Walker: Iterator<Item = Result<(T::Key, T::Value), _>>` yields
+        // rows in B-tree key order.
+        let tx = self.env.tx().unwrap_or_else(|e| {
+            tracing::error!(error = %e, "MDBX txn open failure in MptState::root");
+            panic!("MDBX txn open failure in MptState::root: {e}");
+        });
+        let mut cursor = tx.cursor_read::<Slots>().unwrap_or_else(|e| {
+            tracing::error!(error = %e, "MDBX cursor open failure in MptState::root");
+            panic!("MDBX cursor open failure in MptState::root: {e}");
+        });
+        let walker = cursor.walk(None).unwrap_or_else(|e| {
+            tracing::error!(error = %e, "MDBX cursor walk failure in MptState::root");
+            panic!("MDBX cursor walk failure in MptState::root: {e}");
+        });
+        let entries = walker.map(|row| match row {
+            Ok((slot, raw)) => (
+                slot,
+                decode_slot_value(&raw).unwrap_or_else(|e| {
+                    tracing::error!(error = %e, "MDBX Slots value decode failure in MptState::root");
+                    panic!("MDBX Slots value decode failure in MptState::root: {e}");
+                }),
+            ),
+            Err(e) => {
+                tracing::error!(error = %e, "MDBX cursor walk failure in MptState::root");
+                panic!("MDBX cursor walk failure in MptState::root: {e}");
+            }
+        });
+        trie::compute_root(entries)
     }
 }
 
@@ -156,6 +206,9 @@ impl State for MptState {
     }
 
     fn set(&mut self, slot: B256, val: B256) -> Result<(), StateError> {
+        // Step 1.5 Decision 2 (b): invalidate the memoized root before the
+        // write — the next `root()` recomputes against the new slot set.
+        self.cached_root = OnceLock::new();
         // Decision 4 (b): auto-flush per set — open, write, commit a
         // short-lived RwTxn. Writes are durable + visible to subsequent
         // `get` calls without an intervening `State::commit`.
@@ -170,22 +223,28 @@ impl State for MptState {
         // a stable view; MDBX MVCC isolates from concurrent writes against the
         // same env.
         let tx = self.env.tx().map_err(StateError::io)?;
-        Ok(Box::new(MptSnapshot { tx }))
+        Ok(Box::new(MptSnapshot { tx, cached_root: OnceLock::new() }))
     }
 
     fn commit(&mut self) -> Result<B256, StateError> {
         // Decision 4 (b): `set` already committed each individual write —
-        // `commit` here is a sync-barrier semantic equivalent to 1.3a's no-op.
-        // Returns the current (placeholder) root for caller bookkeeping.
-        Ok(self.root())
+        // `commit` here is a sync barrier. Decision 19 (a): compute the
+        // post-commit root once and repopulate the memo so subsequent
+        // `root()` calls are free. `&mut self` gives exclusive access, so
+        // replace the (set-invalidated) lock with a freshly-seeded one.
+        let r = self.compute_root_from_storage();
+        self.cached_root = OnceLock::new();
+        let _ = self.cached_root.set(r);
+        Ok(r)
     }
 
     fn root(&self) -> B256 {
-        // TODO Step 1.5 — MPT Root Computation:
-        // replace placeholder with real Ethereum-compatible MPT root
-        // (alloy-trie vs custom MPT — decision pre-surfaced in
-        // docs/plans/step-1.3a-decisions.md, answered at 1.5 dispatch).
-        B256::ZERO
+        // Step 1.5 Decisions 2 (b) + 8 (a) + 12 (d) + 14 (a): lazily
+        // compute the MPT root on first call (or after a `set`
+        // invalidation) and memoize it; recompute walks a fresh RO txn
+        // cursor. Infallible — internal MDBX failure panics after a
+        // `tracing::error!` (see `compute_root_from_storage`).
+        *self.cached_root.get_or_init(|| self.compute_root_from_storage())
     }
 }
 
@@ -193,11 +252,18 @@ impl State for MptState {
 ///
 /// Owns a reth-db `RoTxn` (Decision 3); reads traverse the txn directly. Drop
 /// releases the MDBX reader slot via the txn's `Drop` impl (Decision 11).
+///
+/// Caches the computed MPT root lazily in `cached_root` (Step 1.5 Decision
+/// 3 (b)) — the first [`Snapshot::root`] call walks the slots via the
+/// snapshot's RO cursor and populates the cache; later calls return the
+/// cached value. The cache is per-snapshot and does NOT share with
+/// [`MptState`]'s memo (different view; Decision 2 (b)).
 // Drop: relies on `tx`'s auto-Drop, which releases the MDBX reader slot
 // (Step 1.4 Decision 13 — RAII; no explicit Drop impl, no explicit abort()).
 #[derive(Debug)]
 pub struct MptSnapshot {
     tx: <DatabaseEnv as Database>::TX,
+    cached_root: OnceLock<B256>,
 }
 
 impl Snapshot for MptSnapshot {
@@ -207,6 +273,42 @@ impl Snapshot for MptSnapshot {
             None => Ok(B256::ZERO),
             Some(bytes) => decode_slot_value(&bytes),
         }
+    }
+
+    fn root(&self) -> B256 {
+        // Step 1.5 Decisions 1 (a) + 3 (b) + 8 (a) + 12 (d) + 14 (a):
+        // lazy + cache; cursor walk on the snapshot's own RO txn (the
+        // frozen view, NOT live state); infallible — panic on MDBX
+        // failure after `tracing::error!`. `OnceLock<B256>` gives the
+        // `&self` interior mutability with `Send + Sync` (the `Snapshot`
+        // supertrait).
+        *self.cached_root.get_or_init(|| {
+            // Per Context7 LVP-Q5 (reth-db @ 02d1776, Step 1.5): cursor
+            // walk on the held RO txn iterates `Slots` in B-tree key
+            // order; `Walker: Iterator<Item = Result<(K, V), _>>`.
+            let mut cursor = self.tx.cursor_read::<Slots>().unwrap_or_else(|e| {
+                tracing::error!(error = %e, "MDBX cursor open failure in MptSnapshot::root");
+                panic!("MDBX cursor open failure in MptSnapshot::root: {e}");
+            });
+            let walker = cursor.walk(None).unwrap_or_else(|e| {
+                tracing::error!(error = %e, "MDBX cursor walk failure in MptSnapshot::root");
+                panic!("MDBX cursor walk failure in MptSnapshot::root: {e}");
+            });
+            let entries = walker.map(|row| match row {
+                Ok((slot, raw)) => (
+                    slot,
+                    decode_slot_value(&raw).unwrap_or_else(|e| {
+                        tracing::error!(error = %e, "MDBX Slots value decode failure in MptSnapshot::root");
+                        panic!("MDBX Slots value decode failure in MptSnapshot::root: {e}");
+                    }),
+                ),
+                Err(e) => {
+                    tracing::error!(error = %e, "MDBX cursor walk failure in MptSnapshot::root");
+                    panic!("MDBX cursor walk failure in MptSnapshot::root: {e}");
+                }
+            });
+            trie::compute_root(entries)
+        })
     }
 
     fn release(self: Box<Self>) {
